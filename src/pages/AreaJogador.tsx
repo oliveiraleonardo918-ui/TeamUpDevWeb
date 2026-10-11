@@ -13,6 +13,7 @@ import { ErroConexao } from '../components/ErroConexao';
 import { Layout } from '../components/Layout';
 import { ModalExcluirConta } from '../components/ModalExcluirConta';
 import { sair } from '../lib/api';
+import { EMAIL_SUPORTE } from '../lib/config';
 import { buscarPerfil, ETAPAS, NOMES_ETAPAS, type Etapa, type RespostaPerfil } from '../lib/perfil';
 import { useProtegido } from '../lib/useProtegido';
 
@@ -141,6 +142,12 @@ export function AreaJogador() {
           >
             Excluir minha conta
           </button>
+          <p className="border-t border-borda pt-4 text-center text-xs text-texto-suave">
+            Precisa de ajuda? Fale com o suporte:{' '}
+            <a href={`mailto:${EMAIL_SUPORTE}`} className="text-destaque select-all hover:underline">
+              {EMAIL_SUPORTE}
+            </a>
+          </p>
         </Cartao>
 
         <div className="flex min-w-0 flex-1 flex-col gap-6">
