@@ -9,6 +9,7 @@ import { Entrar } from './pages/Entrar';
 import { Equipe } from './pages/Equipe';
 import { Match } from './pages/Match';
 import { Matches } from './pages/Matches';
+import { Moderacao } from './pages/Moderacao';
 import { NaoEncontrada } from './pages/NaoEncontrada';
 import { PerfilJogador } from './pages/PerfilJogador';
 
@@ -24,6 +25,7 @@ export function App() {
       <Route path="/matches" element={<Matches />} />
       <Route path="/matches/:id" element={<Match />} />
       <Route path="/matches/:id/avaliar" element={<Avaliar />} />
+      <Route path="/moderacao" element={<Moderacao />} />
       <Route path="/moderacao/equipe" element={<Equipe />} />
       <Route path="/suspensa" element={<ContaSuspensa />} />
       <Route path="*" element={<NaoEncontrada />} />

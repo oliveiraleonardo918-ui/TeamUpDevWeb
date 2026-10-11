@@ -15,11 +15,11 @@ interface Destino {
   tambemEm?: string[];
 }
 
-// Só para a equipe. Por enquanto leva à página Equipe (admin); as denúncias entram em /moderacao.
-const moderacao: Destino = { rotulo: 'Moderação', para: '/moderacao/equipe', icone: iconeModeracao, tambemEm: ['/moderacao'] };
+// Só para a equipe (moderador e admin)
+const moderacao: Destino = { rotulo: 'Moderação', para: '/moderacao', icone: iconeModeracao, tambemEm: ['/moderacao/'] };
 
 function destinosDe(eu: Me | null): Destino[] {
-  return eu?.papel === 'admin' ? [...destinos, moderacao] : destinos;
+  return eu?.papel === 'admin' || eu?.papel === 'moderador' ? [...destinos, moderacao] : destinos;
 }
 
 const destinos: Destino[] = [

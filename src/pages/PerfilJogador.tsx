@@ -9,6 +9,7 @@ import { Estrelas, formatarNota } from '../components/Estrelas';
 import { Icone } from '../components/Icone';
 import { Indicador } from '../components/Indicador';
 import { Layout } from '../components/Layout';
+import { ModalDenuncia } from '../components/ModalDenuncia';
 import { ApiError } from '../lib/api';
 import { enviarConvite, MENSAGENS_CONVITE } from '../lib/convites';
 import { formatarData } from '../lib/datas';
@@ -118,6 +119,7 @@ function AcaoConvite({ p }: { p: PerfilPublico }) {
 
 function Conteudo({ p }: { p: PerfilPublico }) {
   const [verTodas, setVerTodas] = useState(false);
+  const [denunciando, setDenunciando] = useState(false);
   const funcoes = [p.funcaoPrimaria, p.funcaoSecundaria].filter((f) => f !== null);
   const r = p.reputacao;
   const avaliacoes = verTodas ? p.avaliacoes : p.avaliacoes.slice(0, AVALIACOES_INICIAIS);
@@ -151,6 +153,15 @@ function Conteudo({ p }: { p: PerfilPublico }) {
             </>
           )}
           <AcaoConvite p={p} />
+          {p.relacao !== 'proprio' && (
+            <button
+              type="button"
+              onClick={() => setDenunciando(true)}
+              className="self-center rounded-caixa text-xs text-perigo hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-perigo"
+            >
+              Denunciar<span className="sr-only"> {p.nome}</span>
+            </button>
+          )}
         </Cartao>
         <Aviso tom="info" titulo="Contatos protegidos">
           Riot ID e Discord só aparecem depois de um match mútuo.
@@ -237,6 +248,7 @@ function Conteudo({ p }: { p: PerfilPublico }) {
           </Botao>
         )}
       </div>
+      <ModalDenuncia aberto={denunciando} jogador={p} onFechar={() => setDenunciando(false)} />
     </div>
   );
 }

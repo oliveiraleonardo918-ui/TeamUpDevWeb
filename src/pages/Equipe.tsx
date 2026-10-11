@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { Link } from 'react-router';
 import { Avatar } from '../components/Avatar';
 import { Aviso } from '../components/Aviso';
 import { Botao } from '../components/Botao';
@@ -27,6 +28,12 @@ export function Equipe() {
 
   return (
     <Layout navegacao>
+      <Link
+        to="/moderacao"
+        className="self-start rounded-caixa text-destaque hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque"
+      >
+        ← Voltar para Moderação
+      </Link>
       <header className="flex w-full flex-col gap-4.5">
         <p className="text-xs font-bold text-destaque">ÁREA DE ADMINISTRAÇÃO</p>
         <h1 className="text-titulo font-bold lg:text-titulo-grande">Equipe de moderação</h1>
