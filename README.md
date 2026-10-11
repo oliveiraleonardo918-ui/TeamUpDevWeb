@@ -47,13 +47,16 @@ O projeto aplica na prática:
 - **Jogos e Contas** (Riot ID), **Nível** (elo, função primária e secundária), **Horários** (turnos e "disponível agora")
   e **Estilo de Jogo** (casual/competitivo, bio e gênero opcional)
 - **Área do Jogador** com checklist e progresso; "Completar Perfil" leva direto à etapa pendente
+- **Foto de perfil do Discord** em todo o app (com iniciais quando não há foto)
+- **Sua reputação** na Área do Jogador, com acesso ao seu perfil público e às avaliações que você recebeu
 - A busca só é liberada com o **perfil mínimo**: Riot ID + 1 horário (RN01)
 
 ### 🔎 Buscar duo (RF05, RF06)
 - **Player Cards** ordenados pelos mais compatíveis (turnos em comum, função complementar, elo próximo, mesmo estilo)
 - Filtros de **faixa de elo**, **só funções complementares** (RN03), **turno**, **estilo** e **gênero** (só quem consentiu, RN05)
 - Filtros guardados na URL; no celular, os filtros abrem num painel que sobe de baixo
-- **Perfil público** com reputação, distribuição das notas e comentários recebidos
+- **Perfil público** com reputação, distribuição das notas e todas as avaliações recebidas
+- **Clicar na foto** de qualquer pessoa abre o perfil dela
 
 ### 🤝 Convites e match (RF07–RF09)
 - Convite pelo perfil; o outro jogador **aceita ou recusa** na caixa de convites
@@ -64,15 +67,24 @@ O projeto aplica na prática:
 ### ⭐ Avaliação (RF10)
 - De **1 a 5 estrelas** com comentário opcional, **uma por match** (RN04)
 - A nota pública aparece a partir de **3 avaliações**; antes disso, "Novo jogador"
+- Avaliações **só com estrelas** também aparecem no perfil
+- Avaliações feitas por **contas banidas deixam de contar** (e voltam se a conta for desbanida)
+- Dá para **denunciar o parceiro direto da tela de avaliação**
 
 ### 🛡️ Moderação (RF11, RF12)
-- Qualquer jogador **denuncia** pelo perfil (anônimo para o denunciado)
-- **Moderadores** veem as denúncias, arquivam ou **banem** com motivo; o banido perde o acesso na hora
+- Qualquer jogador **denuncia** pelo perfil ou pela avaliação (anônimo para o denunciado), com até **3 imagens de
+  evidência** (PNG, JPG ou WebP, até 1 MB cada)
+- **Moderadores** veem as denúncias com as evidências, arquivam ou **banem** com motivo; o banido perde o acesso na hora
+- Aba **Usuários banidos** com motivo, quem baniu, quando, denúncias e evidências; **admins removem banimentos**
 - **Admins** gerenciam a equipe; tudo fica num **histórico de moderação**
 
 ### 🔏 Privacidade (RNF09)
 - **Termos de uso** e **Política de privacidade** públicos
 - **Excluir minha conta**: dados pessoais apagados; avaliações dadas ficam anônimas
+
+### ✉️ Suporte
+- **Formulário dentro do site** (rodapé de todas as telas, Área do Jogador e Conta suspensa): a mensagem chega na
+  caixa do suporte por e-mail, sem abrir Outlook ou Gmail, e a resposta vai direto para o e-mail da pessoa
 
 ---
 
@@ -118,10 +130,11 @@ Todas as regras são funções puras em [`worker/rules.ts`](worker/rules.ts), co
 - **[Cloudflare D1](https://developers.cloudflare.com/d1/)**: banco SQLite gerenciado. Acesso só com
   `prepare().bind()` (SQL parametrizado), sem ORM. As migrations ficam em `migrations/`.
 - **[Discord OAuth2](https://discord.com/developers/docs/topics/oauth2)**: provedor de identidade. O TeamUp nunca
-  guarda senha.
+  guarda senha. A foto de perfil vem do CDN do Discord.
+- **[Resend](https://resend.com/)**: envio dos e-mails do formulário de suporte por API HTTP (plano gratuito).
 
 ### Qualidade e testes
-- **[Vitest 5](https://vitest.dev/)**: testes unitários das regras de negócio (84 testes).
+- **[Vitest 5](https://vitest.dev/)**: testes unitários das regras de negócio (99 testes).
 - **[ESLint 10](https://eslint.org/) + typescript-eslint + react-hooks**: análise estática de código.
 
 ### Infraestrutura e DevSecOps
@@ -169,6 +182,7 @@ cp .dev.vars.example .dev.vars
 ```
 
 Edite `.dev.vars` e preencha `DISCORD_CLIENT_SECRET`. O `DISCORD_CLIENT_ID` é público e já está no `wrangler.jsonc`.
+Opcional: `RESEND_API_KEY` para o formulário de suporte enviar e-mail (sem ela, a mensagem só fica guardada no D1).
 
 ### 4. Criar o banco local
 
@@ -210,7 +224,7 @@ TeamUpDevWeb/
 ├── .zap/rules.tsv           # Regras do ZAP (FAIL / WARN / IGNORE)
 ├── docs/requisitos.md       # Requisitos, regras de negócio e decisões do time
 ├── k8s/teamup.yaml          # Deploy efêmero no kind (só para o DAST)
-├── migrations/              # 0001 a 0007, só adicionam (compatíveis com a versão anterior)
+├── migrations/              # 0001 a 0010, só adicionam (compatíveis com a versão anterior)
 ├── seeds/local.sql          # Dados fictícios para o ambiente local
 ├── public/_headers          # CSP e headers de segurança dos estáticos
 ├── src/                     # Frontend React
@@ -227,8 +241,10 @@ TeamUpDevWeb/
 │   ├── perfil.ts            # Perfil gamer
 │   ├── jogadores.ts         # Busca e perfil público
 │   ├── convites.ts          # Convites, matches e avaliações
-│   ├── moderacao.ts         # Denúncias e banimento
+│   ├── moderacao.ts         # Denúncias, evidências e banimento
 │   ├── equipe.ts            # Gestão de moderadores
+│   ├── suporte.ts           # Formulário de suporte (Resend)
+│   ├── util.ts              # Helpers compartilhados (validação, foto do Discord)
 │   ├── rules.ts             # Regras de negócio puras
 │   └── rules.test.ts        # Testes das regras
 ├── Dockerfile               # Imagem só para o DAST
@@ -272,7 +288,9 @@ Cada ambiente tem o próprio banco D1. Staging serve para testar antes de libera
 - ✅ SQL sempre parametrizado (`prepare().bind()`), entrada validada com Zod no servidor
 - ✅ Autorização por recurso: contatos só para a dupla do match, painel só para a equipe
 - ✅ CSP restritiva, HSTS, `X-Frame-Options`, `nosniff` e proteção CSRF
-- ✅ Banido perde todas as sessões na hora; ações da equipe registradas
+- ✅ Banido perde todas as sessões na hora; ações da equipe registradas; avaliações dele deixam de contar
+- ✅ Evidências: tipo conferido pelo conteúdo, limite de tamanho, visíveis só para a equipe
+- ✅ Formulário de suporte com limite por IP, teto diário e campo-armadilha contra robôs
 - ✅ Segredos fora do repositório (`.dev.vars` local, `wrangler secret` e GitHub Environments)
 - ✅ Gates de SAST, SCA, segredos, IaC e DAST em todo PR
 
@@ -317,7 +335,9 @@ se quiser, informa o motivo (fica no histórico). Para tirar, **Remover** na lis
 - [x] Busca com filtros e ordenação por compatibilidade
 - [x] Convites, match mútuo e troca de contatos protegida
 - [x] Avaliações de 1 a 5 estrelas com reputação pública
-- [x] Denúncias, moderação com papéis e histórico auditável
+- [x] Denúncias com evidências, moderação com papéis, aba de banidos e histórico auditável
+- [x] Foto do Discord e avatar clicável para o perfil
+- [x] Formulário de suporte dentro do site
 - [x] Termos, política de privacidade e exclusão de conta (LGPD)
 - [x] Interface responsiva e acessível, fiel ao protótipo do Figma
 - [x] CI/CD com gates de segurança e aprovação para produção
@@ -327,6 +347,7 @@ se quiser, informa o motivo (fica no histórico). Para tirar, **Remover** na lis
 - [ ] Bloquear usuário
 - [ ] Mais jogos além de Valorant
 - [ ] Notificações de convite (e-mail ou Discord)
+- [ ] Evidências no R2 se o volume crescer
 - [ ] Domínio próprio com WAF da Cloudflare na frente do Worker
 - [ ] Testes de integração da API com o runtime do Workers
 

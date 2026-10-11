@@ -20,19 +20,24 @@ graph LR
     Worker["⚙️ Worker<br/>(Hono · /api/*)"]
     D1["🗄️ Cloudflare D1<br/>(SQLite)"]
     Discord["🔐 Discord OAuth2"]
+    CDN["🖼️ cdn.discordapp.com<br/>(fotos de perfil)"]
+    Resend["✉️ Resend<br/>(e-mail do suporte)"]
 
-    Browser -->|HTTPS| Edge
-    Edge -->|qualquer rota que não é /api| Assets
-    Edge -->|/api/*| Worker
-    Worker -->|prepare().bind()| D1
-    Worker -->|troca code por token<br/>e lê /users/@me| Discord
-    Browser -->|redirect de login| Discord
+    Browser -->|"HTTPS"| Edge
+    Edge -->|"qualquer rota que não é /api"| Assets
+    Edge -->|"/api/*"| Worker
+    Worker -->|"SQL com prepare e bind"| D1
+    Worker -->|"troca o code por token e lê o usuário"| Discord
+    Worker -->|"formulário de suporte"| Resend
+    Browser -->|"redirect de login"| Discord
+    Browser -->|"carrega a foto"| CDN
 
     style Browser fill:#e1f5ff
     style Worker fill:#f38020,color:#fff
     style D1 fill:#f38020,color:#fff
     style Edge fill:#1e1e1e,color:#fff
     style Discord fill:#5865f2,color:#fff
+    style Resend fill:#000,color:#fff
 ```
 
 ### Camadas
@@ -43,7 +48,9 @@ graph LR
 3. **API (Worker + Hono)**: middlewares de segurança, sessão e autorização; uma rota por caso de uso.
 4. **Regras de negócio (`worker/rules.ts`)**: funções puras, sem I/O, testadas isoladamente.
 5. **Dados (D1)**: SQLite com migrations versionadas; um banco por ambiente.
-6. **Identidade (Discord)**: provedor OAuth2 externo; o TeamUp não guarda senha.
+6. **Identidade (Discord)**: provedor OAuth2 externo; o TeamUp não guarda senha. As fotos de perfil vêm do CDN do
+   Discord (único domínio de imagem liberado na CSP).
+7. **E-mail (Resend)**: envia as mensagens do formulário de suporte para a caixa da equipe.
 
 ### Um Worker, três ambientes
 
@@ -152,6 +159,8 @@ erDiagram
     users ||--o{ reports : "denuncia / é denunciado"
     users ||--o{ moderacao_log : "age / é alvo"
     reports ||--o{ moderacao_log : "referencia"
+    reports ||--o{ evidencias : "anexa (até 3)"
+    users ||--o{ suporte_mensagens : "envia (opcional)"
 
     users {
         TEXT id PK "UUID"
@@ -215,7 +224,27 @@ erDiagram
         TEXT denuncia_id FK
         TEXT motivo
     }
+    evidencias {
+        TEXT id PK
+        TEXT denuncia_id FK
+        TEXT tipo "png, jpeg ou webp"
+        INTEGER tamanho "até 1 MB"
+        BLOB dados
+    }
+    suporte_mensagens {
+        TEXT id PK
+        TEXT user_id FK "se estava logado"
+        TEXT email_resposta
+        TEXT assunto
+        TEXT mensagem
+        TEXT ip_hash "SHA-256 do IP"
+        INTEGER enviado
+    }
 ```
+
+**View `ratings_validas`**: as avaliações cujo autor não está banido. Toda leitura de reputação (nota, distribuição,
+lista, busca, convites, matches) usa a view; a tabela `ratings` continua recebendo as gravações. Se uma conta for
+desbanida, as avaliações dela voltam a contar.
 
 ### Migrations
 
@@ -228,6 +257,9 @@ erDiagram
 | `0005_papeis_moderacao` | `users.papel` e tabela `moderacao_log` |
 | `0006_denuncias` | `reports.descricao`, `resolucao`, `resolvido_em`, `resolvido_por` |
 | `0007_exclusao_conta` | `users.excluido_em` |
+| `0008_suporte` | Tabela `suporte_mensagens` (formulário de suporte e limite anti-spam) |
+| `0009_ratings_validas` | View `ratings_validas` (avaliações de banidos não contam) |
+| `0010_evidencias` | Tabela `evidencias` (imagens anexadas às denúncias) |
 
 Regra do time: **migration só adiciona** (colunas, tabelas, índices). Nada é renomeado ou apagado, para que a versão
 anterior do código continue funcionando enquanto o deploy acontece (as migrations rodam antes do deploy do Worker).
@@ -237,31 +269,35 @@ anterior do código continue funcionando enquanto o deploy acontece (as migratio
 ## 🔌 API
 
 Todas as rotas ficam sob `/api`. Respostas de erro são sempre JSON genérico (`{ "error": "codigo" }`), sem stack trace.
+Toda resposta que traz pessoas inclui `avatarUrl` (foto do Discord, montada e validada por `avatarUrl()` em `worker/util.ts`).
 
 | Método e rota | Acesso | Função |
 |---------------|--------|--------|
 | `GET /health` | Público | Health check (smoke test e probes do Kubernetes) |
 | `GET /auth/discord`, `GET /auth/callback` | Público | Login OAuth2 (RF01) |
 | `POST /auth/logout` | Público | Encerra a sessão |
+| `POST /suporte` | Público | Formulário de suporte: guarda a mensagem e envia por e-mail (limites anti-spam) |
 | `GET /me` | Sessão | Dados do próprio usuário, papel e convites pendentes |
 | `POST /me/excluir` | Sessão | Exclui (anonimiza) a própria conta (RNF09) |
-| `GET /perfil` | Sessão | Perfil próprio + etapas concluídas + busca liberada (RF02, RF03, RN01) |
+| `GET /perfil` | Sessão | Perfil próprio, etapas concluídas, busca liberada e reputação própria (RF02, RF03, RN01) |
 | `PUT /perfil/{jogos,nivel,horarios,estilo}` | Sessão | Salva uma etapa (RF02, RF04, RN05) |
 | `GET /jogadores` | Sessão + perfil mínimo | Busca com filtros (RF05, RN03, RN05) |
-| `GET /jogadores/:id` | Sessão | Perfil público, reputação e relação com quem vê (RF06) |
+| `GET /jogadores/:id` | Sessão | Perfil público, reputação, todas as avaliações (com ou sem comentário) e relação com quem vê (RF06) |
 | `GET /convites`, `POST /convites` | Sessão | Lista e envia convites (RF07, RF08) |
 | `POST /convites/:id/aceitar` · `/recusar` | Quem recebeu | Responde o convite (RF08) |
 | `GET /matches`, `GET /matches/:id` | Participantes | Histórico e contatos do parceiro (RF09, RN02) |
 | `POST /matches/:id/avaliacao` | Participantes | Avaliação de 1 a 5 (RF10, RN04) |
-| `POST /denuncias` | Sessão | Denuncia um jogador (RF11) |
-| `GET /moderacao`, `POST /moderacao/...` | Moderador ou admin | Denúncias, arquivar, banir; desbanir só admin (RF12, RN07) |
+| `POST /denuncias` | Sessão | Denuncia um jogador, com até 3 imagens de evidência (multipart) (RF11) |
+| `GET /moderacao`, `POST /moderacao/...` | Moderador ou admin | Denúncias com evidências, arquivar, banir; desbanir só admin (RF12, RN07) |
+| `GET /moderacao/banidos` | Moderador ou admin | Usuários banidos com motivo, quem baniu, denúncias e evidências |
+| `GET /moderacao/evidencias/:id` | Moderador ou admin | A imagem de uma evidência (Content-Type validado, CSP sandbox) |
 | `GET /equipe`, `POST /equipe/moderadores...` | Admin | Gestão de moderadores e histórico |
 
 ### Ordem dos middlewares (`worker/index.ts`)
 
 1. `secureHeaders()`: CSP, `X-Frame-Options`, `nosniff`, HSTS e afins em toda resposta da API.
 2. `csrf()`: recusa POST de formulário vindo de outra origem.
-3. Sessão: toda rota exige sessão, exceto `/api/health` e `/api/auth/*` (`rotaPublica`).
+3. Sessão: toda rota exige sessão, exceto `/api/health`, `/api/suporte` e `/api/auth/*` (`rotaPublica`).
 4. Rota: valida a entrada com Zod, aplica a regra de negócio e acessa o D1 com SQL parametrizado.
 5. `onError`: erros esperados mantêm o status com corpo genérico; o resto vira 500 sem detalhes.
 
@@ -287,6 +323,9 @@ Todas as rotas ficam sob `/api`. Respostas de erro são sempre JSON genérico (`
 | RF11 denúncia | `podeDenunciar` | `moderacao.ts` |
 | RF12 / RN07 banimento | `podeBanir`, `podeDesbanir` | `moderacao.ts` |
 | RNF09 exclusão | `dadosAnonimizados` | `index.ts` |
+| RF11 evidências | `tipoImagem`, `validarEvidencias` | `moderacao.ts` |
+| Suporte anti-spam | `podeEnviarSuporte` | `suporte.ts` |
+| Foto de perfil | `avatarUrl` (`worker/util.ts`) | todas as rotas que trazem pessoas |
 
 ---
 
@@ -305,7 +344,8 @@ Todas as rotas ficam sob `/api`. Respostas de erro são sempre JSON genérico (`
 | `/jogadores/:id` | Perfil público | Sessão |
 | `/convites` | Caixa de convites | Sessão |
 | `/matches`, `/matches/:id`, `/matches/:id/avaliar` | Matches, Deu match!, Avaliar | Participantes |
-| `/moderacao` | Painel de moderação | Moderador ou admin |
+| `/moderacao` | Painel de moderação (aba Denúncias) | Moderador ou admin |
+| `/moderacao?aba=banidos` | Usuários banidos com motivo e evidências | Moderador ou admin |
 | `/moderacao/equipe` | Equipe | Admin |
 
 As telas que exigem sessão usam o hook `useProtegido`: sem sessão (401) voltam para a entrada; banido (403) vai para
@@ -319,6 +359,10 @@ que a pessoa não pode usar.
 - **Componentes base** em `src/components/`: `Botao` (primário, secundário, perigo), `Cartao`, `Aviso`, `Modal` e
   `Folha` (`<dialog>` nativo), `Opcoes` (radios/checkboxes com visual de chip), `Interruptor` (`role="switch"`),
   `Campo`, `EscolhaEstrelas`...
+- **`Avatar`**: foto do Discord com volta para as iniciais se não houver foto ou a imagem falhar; com `para`, vira
+  link para o perfil público (clicar na foto abre o perfil da pessoa).
+- **Janelas**: `ModalDenuncia` (com anexos), `ModalSuporte` (formulário de suporte), `ModalExcluirConta`.
+- **Rodapé** em todas as telas com Suporte, Termos de uso e Política de privacidade.
 - **Mobile-first**: navegação no topo no desktop e barra fixa embaixo no celular.
 - **Acessibilidade**: inputs nativos, `label` em todo campo, foco visível, `aria-live` nas mensagens, contraste AA.
 
@@ -340,6 +384,10 @@ que a pessoa não pode usar.
 | Abuso | Limites de convites pendentes, de denúncias por dia e espera após recusa |
 | Escalada de privilégio | Admin só por configuração; papel calculado no servidor; hierarquia em `podeBanir` |
 | Conta banida ativa | Sessões apagadas no banimento e conferência a cada requisição |
+| Avaliações de contas banidas | View `ratings_validas` tira essas avaliações de toda a reputação |
+| Upload malicioso (evidências) | Tipo conferido pelos bytes (PNG/JPEG/WebP), até 3 arquivos de 1 MB, imagem servida só para a equipe com `Content-Type` fixo, `no-store` e CSP `sandbox` |
+| Spam no suporte (rota pública) | 3 mensagens por hora por IP (só o hash é guardado), 100 por dia, campo-armadilha; e-mail só em texto |
+| URL de foto manipulada | `avatarUrl()` valida o id e o hash do Discord antes de montar a URL |
 
 ---
 
@@ -366,6 +414,19 @@ comprometida, ela não consegue se promover nem remover os admins.
 ### Por que anonimizar em vez de apagar ao excluir a conta?
 `ratings` tem `ON DELETE CASCADE`: apagar o usuário apagaria as avaliações que ele deu e mudaria a reputação de outras
 pessoas. A exclusão remove os dados pessoais e deixa os registros como "Conta excluída".
+
+### Por que filtrar (e não apagar) as avaliações de banidos?
+Apagar seria irreversível: se o banimento for revisto, a reputação de outras pessoas ficaria errada para sempre. Com a
+view `ratings_validas`, banir tira as avaliações da conta e desbanir devolve, sem perder dados.
+
+### Por que as evidências ficam no D1?
+São no máximo 3 imagens de 1 MB por denúncia, bem abaixo do limite de linha do D1, e assim não é preciso configurar
+outro serviço. Se o volume crescer, as imagens podem ir para o R2 (armazenamento de objetos da Cloudflare).
+
+### Por que Resend para o suporte?
+O Workers não envia e-mail sozinho sem domínio próprio. O Resend tem plano gratuito, uma API HTTP simples e permite
+enviar para o e-mail dono da conta (o do suporte) sem domínio. A mensagem também fica no D1, então nada se perde se o
+envio falhar.
 
 ### Por que Docker e Kubernetes se produção é serverless?
 Só para o **DAST**: o ZAP precisa atacar uma instância rodando. A imagem executa o Worker no `workerd` (o mesmo runtime
