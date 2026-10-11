@@ -160,3 +160,16 @@ export function podeConvidar(p: {
   if (p.pendentesEnviados >= MAX_CONVITES_PENDENTES) return 'limite_convites';
   return null;
 }
+
+export const COMENTARIO_MAX = 280;
+
+/** RN04: só avalia quem participou de um match aceito, uma vez por match. */
+export function podeAvaliar(p: {
+  participante: boolean;
+  matchAceito: boolean;
+  jaAvaliou: boolean;
+}): 'nao_encontrado' | 'ja_avaliado' | null {
+  if (!p.participante || !p.matchAceito) return 'nao_encontrado';
+  if (p.jaAvaliou) return 'ja_avaliado';
+  return null;
+}

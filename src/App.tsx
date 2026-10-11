@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router';
 import { AreaJogador } from './pages/AreaJogador';
+import { Avaliar } from './pages/Avaliar';
 import { Buscar } from './pages/Buscar';
 import { Convites } from './pages/Convites';
 import { ContaSuspensa } from './pages/ContaSuspensa';
@@ -21,6 +22,7 @@ export function App() {
       <Route path="/convites" element={<Convites />} />
       <Route path="/matches" element={<Matches />} />
       <Route path="/matches/:id" element={<Match />} />
+      <Route path="/matches/:id/avaliar" element={<Avaliar />} />
       <Route path="/suspensa" element={<ContaSuspensa />} />
       <Route path="*" element={<NaoEncontrada />} />
     </Routes>

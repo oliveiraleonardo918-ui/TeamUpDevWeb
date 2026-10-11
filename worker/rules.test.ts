@@ -11,6 +11,7 @@ import {
   funcoesValidas,
   generoParaSalvar,
   notaValida,
+  podeAvaliar,
   perfilCompleto,
   proximaEtapa,
   riotIdValido,
@@ -162,4 +163,14 @@ describe('RF07 - enviar convite', () => {
     expect(podeConvidar({ ...base, recusouRecentemente: true })).toBe('convite_recusado'));
   it('limita convites pendentes', () =>
     expect(podeConvidar({ ...base, pendentesEnviados: MAX_CONVITES_PENDENTES })).toBe('limite_convites'));
+});
+
+describe('RN04 - avaliação', () => {
+  const ok = { participante: true, matchAceito: true, jaAvaliou: false };
+  it('participante de match aceito avalia', () => expect(podeAvaliar(ok)).toBeNull());
+  it('quem não participou não avalia (e não descobre que o match existe)', () =>
+    expect(podeAvaliar({ ...ok, participante: false })).toBe('nao_encontrado'));
+  it('convite pendente ou recusado não é match', () =>
+    expect(podeAvaliar({ ...ok, matchAceito: false })).toBe('nao_encontrado'));
+  it('uma avaliação por match', () => expect(podeAvaliar({ ...ok, jaAvaliou: true })).toBe('ja_avaliado'));
 });

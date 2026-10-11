@@ -11,6 +11,7 @@ const variantes = {
 export function Botao({
   variante = 'primario',
   cheio = true,
+  compacto = false,
   className = '',
   type = 'button',
   ...props
@@ -18,11 +19,13 @@ export function Botao({
   variante?: keyof typeof variantes;
   /** false: largura do conteúdo em vez de ocupar a linha toda */
   cheio?: boolean;
+  /** Altura menor (40px), para ações dentro de listas */
+  compacto?: boolean;
 }) {
   return (
     <button
       type={type}
-      className={`flex h-12 ${cheio ? 'w-full' : 'w-auto'} items-center justify-center gap-2 rounded-lg px-4 text-base font-bold outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${variantes[variante]} ${className}`}
+      className={`flex ${compacto ? 'h-10' : 'h-12'} ${cheio ? 'w-full' : 'w-auto'} items-center justify-center gap-2 rounded-lg px-4 text-base font-bold outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${variantes[variante]} ${className}`}
       {...props}
     />
   );
