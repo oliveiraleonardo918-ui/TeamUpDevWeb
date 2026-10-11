@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
+import { contarConvitesPendentes } from '../lib/convites';
 import { NavegacaoInferior, NavegacaoTopo } from './Navegacao';
 
 /**
@@ -15,6 +16,20 @@ export function Layout({
   navegacao?: boolean;
   children: ReactNode;
 }) {
+  const [pendentes, setPendentes] = useState(0);
+
+  // Selo de convites no menu; falhar aqui não deve atrapalhar a página
+  useEffect(() => {
+    if (!navegacao) return;
+    let ativo = true;
+    contarConvitesPendentes()
+      .then((r) => ativo && setPendentes(r.pendentes))
+      .catch(() => undefined);
+    return () => {
+      ativo = false;
+    };
+  }, [navegacao]);
+
   return (
     <div className={`flex min-h-dvh flex-col ${navegacao ? 'pb-20 lg:pb-0' : ''}`}>
       <header className="flex h-16 items-center justify-between border-b border-borda px-6 lg:h-22 lg:px-16">
@@ -24,7 +39,7 @@ export function Layout({
         >
           TeamUp<span className="text-destaque">.</span>
         </Link>
-        {navegacao ? <NavegacaoTopo /> : acoes}
+        {navegacao ? <NavegacaoTopo pendentes={pendentes} /> : acoes}
       </header>
 
       <main className="flex flex-1 flex-col items-center gap-7 px-6 pt-7 pb-8 lg:px-32 lg:py-12">
@@ -34,7 +49,7 @@ export function Layout({
         )}
       </main>
 
-      {navegacao && <NavegacaoInferior />}
+      {navegacao && <NavegacaoInferior pendentes={pendentes} />}
     </div>
   );
 }

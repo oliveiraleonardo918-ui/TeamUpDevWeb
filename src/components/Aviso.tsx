@@ -3,9 +3,10 @@ import type { ReactNode } from 'react';
 const tons = {
   perigo: { caixa: 'bg-perigo-fundo', titulo: 'text-perigo', papel: 'alert' },
   info: { caixa: 'bg-destaque-fundo', titulo: 'text-destaque', papel: 'note' },
+  roxo: { caixa: 'bg-roxo-fundo', titulo: 'text-roxo', papel: 'note' },
 } as const;
 
-/** Caixa de aviso (componente "Aviso" do protótipo): vermelha para erro, verde-água para informação. */
+/** Caixa de aviso (componente "Aviso" do protótipo): vermelha para erro, verde-água ou roxa para informação. */
 export function Aviso({
   titulo,
   tom = 'perigo',

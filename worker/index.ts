@@ -3,6 +3,7 @@ import { csrf } from 'hono/csrf';
 import { HTTPException } from 'hono/http-exception';
 import { secureHeaders } from 'hono/secure-headers';
 import { auth } from './auth';
+import { convites, matches } from './convites';
 import type { AppEnv } from './env';
 import { jogadores } from './jogadores';
 import { perfil } from './perfil';
@@ -40,6 +41,8 @@ app.get('/me', (c) => {
 
 app.route('/perfil', perfil);
 app.route('/jogadores', jogadores);
+app.route('/convites', convites);
+app.route('/matches', matches);
 
 app.notFound((c) => c.json({ error: 'not_found' }, 404));
 

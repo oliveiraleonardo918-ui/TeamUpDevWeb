@@ -9,17 +9,15 @@ interface Destino {
   rotulo: string;
   para: string;
   icone: string;
-  /** Página ainda não implementada: aparece, mas não navega. */
-  disponivel: boolean;
   /** Outros caminhos em que o item aparece como ativo. */
   tambemEm?: string[];
 }
 
 const destinos: Destino[] = [
-  { rotulo: 'Buscar', para: '/buscar', icone: iconeBuscar, disponivel: true, tambemEm: ['/jogadores/'] },
-  { rotulo: 'Convites', para: '/convites', icone: iconeConvites, disponivel: false },
-  { rotulo: 'Matches', para: '/matches', icone: iconeMatches, disponivel: false },
-  { rotulo: 'Perfil', para: '/jogador', icone: iconePerfil, disponivel: true, tambemEm: ['/perfil/'] },
+  { rotulo: 'Buscar', para: '/buscar', icone: iconeBuscar, tambemEm: ['/jogadores/'] },
+  { rotulo: 'Convites', para: '/convites', icone: iconeConvites },
+  { rotulo: 'Matches', para: '/matches', icone: iconeMatches, tambemEm: ['/matches/'] },
+  { rotulo: 'Perfil', para: '/jogador', icone: iconePerfil, tambemEm: ['/perfil/'] },
 ];
 
 function useAtivo() {
@@ -29,28 +27,35 @@ function useAtivo() {
 
 const foco = 'rounded-caixa focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque';
 
-/** Navegação principal: no topo no desktop, barra fixa embaixo no celular. */
-export function NavegacaoTopo() {
+/** Selo roxo com a quantidade de convites recebidos pendentes ("Convites ❷" no protótipo). */
+function Selo({ destino, pendentes }: { destino: Destino; pendentes: number }) {
+  if (destino.para !== '/convites' || pendentes === 0) return null;
+  return (
+    <span className="ml-1 inline-flex min-w-4 items-center justify-center rounded-full bg-roxo px-1 text-2xs font-bold text-fundo">
+      {pendentes > 9 ? '9+' : pendentes}
+      <span className="sr-only"> {pendentes === 1 ? 'convite pendente' : 'convites pendentes'}</span>
+    </span>
+  );
+}
+
+/** Navegação principal no topo (desktop). */
+export function NavegacaoTopo({ pendentes }: { pendentes: number }) {
   const ativo = useAtivo();
   return (
     <nav aria-label="Principal" className="hidden lg:block">
       <ul className="flex w-120 text-center text-base">
         {destinos.map((d) => (
           <li key={d.para} className="flex-1">
-            {d.disponivel ? (
-              <NavLink
-                to={d.para}
-                className={() =>
-                  `${foco} ${ativo(d) ? 'font-bold text-destaque underline underline-offset-4' : 'text-texto-suave hover:text-texto'}`
-                }
-              >
-                {d.rotulo}
-              </NavLink>
-            ) : (
-              <span aria-disabled="true" title="Em breve" className="cursor-not-allowed text-texto-suave">
-                {d.rotulo}
-              </span>
-            )}
+            <NavLink
+              to={d.para}
+              aria-current={ativo(d) ? 'page' : undefined}
+              className={() =>
+                `${foco} ${ativo(d) ? 'font-bold text-destaque underline underline-offset-4' : 'text-texto-suave hover:text-texto'}`
+              }
+            >
+              {d.rotulo}
+              <Selo destino={d} pendentes={pendentes} />
+            </NavLink>
           </li>
         ))}
       </ul>
@@ -58,7 +63,8 @@ export function NavegacaoTopo() {
   );
 }
 
-export function NavegacaoInferior() {
+/** Navegação principal fixa embaixo (celular). */
+export function NavegacaoInferior({ pendentes }: { pendentes: number }) {
   const ativo = useAtivo();
   return (
     <nav
@@ -66,31 +72,23 @@ export function NavegacaoInferior() {
       className="fixed inset-x-0 bottom-0 z-10 h-20 border-t border-borda bg-superficie px-6 py-3 lg:hidden"
     >
       <ul className="flex h-full text-center text-2xs">
-        {destinos.map((d) => {
-          const conteudo = (
-            <>
+        {destinos.map((d) => (
+          <li key={d.para} className="flex-1">
+            <NavLink
+              to={d.para}
+              aria-current={ativo(d) ? 'page' : undefined}
+              className={() =>
+                `flex flex-col items-center gap-1.75 ${foco} ${ativo(d) ? 'font-bold text-destaque' : 'text-texto-suave'}`
+              }
+            >
               <Icone src={d.icone} tamanho={20} colorir />
-              {d.rotulo}
-            </>
-          );
-          const base = `flex flex-col items-center gap-1.75 ${foco}`;
-          return (
-            <li key={d.para} className="flex-1">
-              {d.disponivel ? (
-                <NavLink
-                  to={d.para}
-                  className={() => `${base} ${ativo(d) ? 'font-bold text-destaque' : 'text-texto-suave'}`}
-                >
-                  {conteudo}
-                </NavLink>
-              ) : (
-                <span aria-disabled="true" title="Em breve" className={`${base} cursor-not-allowed text-texto-suave`}>
-                  {conteudo}
-                </span>
-              )}
-            </li>
-          );
-        })}
+              <span>
+                {d.rotulo}
+                <Selo destino={d} pendentes={pendentes} />
+              </span>
+            </NavLink>
+          </li>
+        ))}
       </ul>
     </nav>
   );

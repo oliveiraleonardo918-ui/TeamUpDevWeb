@@ -1,10 +1,11 @@
 // RF05 (busca com filtros) e RF06 (perfil público com reputação).
 // RN02: nada de Riot ID ou Discord aqui; isso só sai depois do match.
 import { zValidator } from '@hono/zod-validator';
-import { Hono, type Context } from 'hono';
+import { Hono } from 'hono';
 import { z } from 'zod';
 import type { AppEnv } from './env';
 import { compatibilidade, ELOS, faixaElo, notaPublica, perfilCompleto } from './rules';
+import { conviteEntre, entradaInvalida, lerTurnos, naoEncontrado } from './util';
 
 const LIMITE_BUSCA = 100;
 const LIMITE_AVALIACOES = 20;
@@ -17,19 +18,6 @@ const filtrosSchema = z.object({
   estilo: z.enum(['casual', 'competitivo']).optional(),
   genero: z.enum(['mulher', 'homem', 'nao_binario']).optional(),
 });
-
-const entradaInvalida = (r: { success: boolean }, c: Context) => {
-  if (!r.success) return c.json({ error: 'entrada_invalida' }, 400);
-};
-
-function lerTurnos(json: string | null): string[] {
-  try {
-    const v: unknown = JSON.parse(json ?? '[]');
-    return Array.isArray(v) ? v.filter((t): t is string => typeof t === 'string') : [];
-  } catch {
-    return [];
-  }
-}
 
 interface LinhaMeuPerfil {
   riot_id: string | null;
@@ -143,9 +131,7 @@ interface LinhaAvaliacao {
 
 jogadores.get(
   '/:id',
-  zValidator('param', z.object({ id: z.string().uuid() }), (r, c) => {
-    if (!r.success) return c.json({ error: 'not_found' }, 404);
-  }),
+  zValidator('param', z.object({ id: z.string().uuid() }), naoEncontrado),
   async (c) => {
     const { id } = c.req.valid('param');
     const db = c.env.DB;
@@ -183,9 +169,20 @@ jogadores.get(
     const total = porNota.reduce((a, b) => a + b, 0);
     const media = total ? porNota.reduce((soma, n, nota) => soma + n * nota, 0) / total : null;
     const nota = notaPublica(media, total);
+    const convite = await conviteEntre(c, c.var.usuario.id, id);
+    const relacao = !convite
+      ? 'nenhuma'
+      : convite.status === 'aceito'
+        ? 'match'
+        : convite.enviadoPorMim
+          ? 'convite_enviado'
+          : 'convite_recebido';
 
     return c.json({
       id: linha.id,
+      // Situação entre quem vê e o jogador: define o botão "Convidar" (RF07)
+      relacao: linha.id === c.var.usuario.id ? 'proprio' : relacao,
+      matchId: convite?.status === 'aceito' ? convite.id : null,
       nome: linha.nome,
       elo: linha.elo,
       funcaoPrimaria: linha.funcao_primaria,

@@ -123,3 +123,40 @@ export function compatibilidade(eu: PerfilCompatibilidade, outro: PerfilCompatib
   if (eu.estilo && eu.estilo === outro.estilo) pontos += 1;
   return pontos;
 }
+
+/** Máximo de convites pendentes enviados ao mesmo tempo (evita spam). */
+export const MAX_CONVITES_PENDENTES = 20;
+
+/** Depois de uma recusa, quem convidou espera este tempo para convidar a mesma pessoa de novo. */
+export const DIAS_APOS_RECUSA = 7;
+
+export type MotivoConviteBloqueado =
+  | 'proprio_usuario'
+  | 'perfil_incompleto'
+  | 'convite_existente'
+  | 'convite_recebido'
+  | 'ja_tem_match'
+  | 'convite_recusado'
+  | 'limite_convites';
+
+/**
+ * RF07: pode enviar convite? `entrePar` é o convite mais relevante já existente entre os dois
+ * (pendente ou aceito), com a direção vista por quem convida.
+ */
+export function podeConvidar(p: {
+  euId: string;
+  alvoId: string;
+  meuPerfilCompleto: boolean;
+  entrePar: { status: 'pendente' | 'aceito'; enviadoPorMim: boolean } | null;
+  pendentesEnviados: number;
+  /** Esta pessoa recusou um convite meu nos últimos DIAS_APOS_RECUSA dias (evita insistência) */
+  recusouRecentemente: boolean;
+}): MotivoConviteBloqueado | null {
+  if (p.euId === p.alvoId) return 'proprio_usuario';
+  if (!p.meuPerfilCompleto) return 'perfil_incompleto';
+  if (p.entrePar?.status === 'aceito') return 'ja_tem_match';
+  if (p.entrePar?.status === 'pendente') return p.entrePar.enviadoPorMim ? 'convite_existente' : 'convite_recebido';
+  if (p.recusouRecentemente) return 'convite_recusado';
+  if (p.pendentesEnviados >= MAX_CONVITES_PENDENTES) return 'limite_convites';
+  return null;
+}

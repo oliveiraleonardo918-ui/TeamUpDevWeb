@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   compatibilidade,
+  MAX_CONVITES_PENDENTES,
+  podeConvidar,
   decidirLogin,
   faixaElo,
   notaPublica,
@@ -136,4 +138,28 @@ describe('Compatibilidade', () => {
     expect(compatibilidade(eu, afinado)).toBeGreaterThan(compatibilidade(eu, distante));
   });
   it('perfil sem dados vale zero', () => expect(compatibilidade(eu, {})).toBe(0));
+});
+
+describe('RF07 - enviar convite', () => {
+  const base = {
+    euId: 'a',
+    alvoId: 'b',
+    meuPerfilCompleto: true,
+    entrePar: null,
+    pendentesEnviados: 0,
+    recusouRecentemente: false,
+  };
+  it('libera quando não há nada entre os dois', () => expect(podeConvidar(base)).toBeNull());
+  it('não convida a si mesmo', () => expect(podeConvidar({ ...base, alvoId: 'a' })).toBe('proprio_usuario'));
+  it('exige perfil mínimo (RN01)', () => expect(podeConvidar({ ...base, meuPerfilCompleto: false })).toBe('perfil_incompleto'));
+  it('não repete convite pendente', () =>
+    expect(podeConvidar({ ...base, entrePar: { status: 'pendente', enviadoPorMim: true } })).toBe('convite_existente'));
+  it('avisa quando o outro já me convidou', () =>
+    expect(podeConvidar({ ...base, entrePar: { status: 'pendente', enviadoPorMim: false } })).toBe('convite_recebido'));
+  it('não convida quem já é match (RN02: o match é único por par)', () =>
+    expect(podeConvidar({ ...base, entrePar: { status: 'aceito', enviadoPorMim: false } })).toBe('ja_tem_match'));
+  it('espera antes de reconvidar quem recusou', () =>
+    expect(podeConvidar({ ...base, recusouRecentemente: true })).toBe('convite_recusado'));
+  it('limita convites pendentes', () =>
+    expect(podeConvidar({ ...base, pendentesEnviados: MAX_CONVITES_PENDENTES })).toBe('limite_convites'));
 });

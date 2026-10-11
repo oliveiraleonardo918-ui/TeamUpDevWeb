@@ -1,9 +1,10 @@
 // RF02-RF04: perfil gamer do próprio usuário (a rota exige sessão; só lê/altera o próprio perfil).
 import { zValidator } from '@hono/zod-validator';
-import { Hono, type Context } from 'hono';
+import { Hono } from 'hono';
 import { z } from 'zod';
 import type { AppEnv } from './env';
 import { ELOS, etapasConcluidas, funcoesValidas, generoParaSalvar, perfilCompleto, proximaEtapa, riotIdValido } from './rules';
+import { entradaInvalida } from './util';
 
 const FUNCOES = ['duelista', 'iniciador', 'controlador', 'sentinela'] as const;
 const TURNOS = ['manha', 'tarde', 'noite', 'madrugada'] as const;
@@ -58,9 +59,6 @@ function lerTurnos(json: string | null): string[] {
   }
 }
 
-const entradaInvalida = (r: { success: boolean }, c: Context) => {
-  if (!r.success) return c.json({ error: 'entrada_invalida' }, 400);
-};
 
 export const perfil = new Hono<AppEnv>();
 
