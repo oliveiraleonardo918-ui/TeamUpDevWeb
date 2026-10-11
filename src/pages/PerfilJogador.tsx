@@ -221,13 +221,11 @@ function Conteudo({ p }: { p: PerfilPublico }) {
 
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold">Avaliações recebidas</h2>
-          <p className="text-sm text-texto-suave">
-            {p.avaliacoes.length} {p.avaliacoes.length === 1 ? 'comentário' : 'comentários'}
-          </p>
+          <p className="text-sm text-texto-suave">{r.total}</p>
         </div>
 
         {p.avaliacoes.length === 0 ? (
-          <p className="text-texto-suave">Ainda não há comentários.</p>
+          <p className="text-texto-suave">Ainda não há avaliações.</p>
         ) : (
           <ul className="flex flex-col gap-6">
             {avaliacoes.map((a) => (
@@ -247,7 +245,12 @@ function Conteudo({ p }: { p: PerfilPublico }) {
                     </div>
                   </div>
                   {a.nota !== null && <Estrelas nota={a.nota} />}
-                  <p>{a.comentario}</p>
+                  {a.comentario ? (
+                    <p>{a.comentario}</p>
+                  ) : (
+                    // Só estrelas: antes de 3 avaliações a nota individual fica oculta (mesma regra da nota pública)
+                    a.nota === null && <p className="text-sm text-texto-suave">Avaliou sem comentário.</p>
+                  )}
                 </Cartao>
               </li>
             ))}

@@ -73,7 +73,7 @@ convites.get('/', async (c) => {
            JOIN users u ON u.id = i.de_user
            LEFT JOIN profiles p ON p.user_id = u.id
            LEFT JOIN (SELECT avaliado_id, AVG(nota) AS media, COUNT(*) AS total
-                        FROM ratings GROUP BY avaliado_id) r ON r.avaliado_id = u.id
+                        FROM ratings_validas GROUP BY avaliado_id) r ON r.avaliado_id = u.id
           WHERE i.para_user = ? AND i.status = 'pendente' AND u.banido = 0 AND u.excluido_em IS NULL
           ORDER BY i.criado_em DESC
           LIMIT ?`,
@@ -89,7 +89,7 @@ convites.get('/', async (c) => {
            JOIN users u ON u.id = i.para_user
            LEFT JOIN profiles p ON p.user_id = u.id
            LEFT JOIN (SELECT avaliado_id, AVG(nota) AS media, COUNT(*) AS total
-                        FROM ratings GROUP BY avaliado_id) r ON r.avaliado_id = u.id
+                        FROM ratings_validas GROUP BY avaliado_id) r ON r.avaliado_id = u.id
           WHERE i.de_user = ? AND u.banido = 0 AND u.excluido_em IS NULL
           ORDER BY i.criado_em DESC
           LIMIT ?`,
@@ -239,7 +239,7 @@ matches.get('/:id', zValidator('param', idSchema, naoEncontrado), async (c) => {
        LEFT JOIN profiles p ON p.user_id = u.id
        LEFT JOIN ratings mr ON mr.invite_id = i.id AND mr.autor_id = ?2
        LEFT JOIN (SELECT avaliado_id, AVG(nota) AS media, COUNT(*) AS total
-                    FROM ratings GROUP BY avaliado_id) r ON r.avaliado_id = u.id
+                    FROM ratings_validas GROUP BY avaliado_id) r ON r.avaliado_id = u.id
       WHERE i.id = ?1 AND i.status = 'aceito' AND (i.de_user = ?2 OR i.para_user = ?2) AND u.banido = 0
         AND u.excluido_em IS NULL`,
   )
@@ -331,7 +331,7 @@ matches.post(
     }
 
     const rep = await db
-      .prepare('SELECT AVG(nota) AS media, COUNT(*) AS total FROM ratings WHERE avaliado_id = ?')
+      .prepare('SELECT AVG(nota) AS media, COUNT(*) AS total FROM ratings_validas WHERE avaliado_id = ?')
       .bind(avaliado)
       .first<{ media: number | null; total: number }>();
     return c.json({ reputacao: { nota: notaPublica(rep?.media ?? null, rep?.total ?? 0), total: rep?.total ?? 0 } }, 201);
