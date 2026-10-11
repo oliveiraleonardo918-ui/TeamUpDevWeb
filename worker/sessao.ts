@@ -107,3 +107,18 @@ export const exigirSessao = createMiddleware<AppEnv>(async (c, next) => {
   });
   await next();
 });
+
+/** Para rotas públicas: quem está logado (sessão válida), sem exigir login. */
+export async function usuarioOpcional(
+  c: Context<AppEnv>,
+): Promise<{ id: string; nome: string; discordUsername: string } | null> {
+  const token = getCookie(c, COOKIE_SESSAO);
+  if (!token || token.length > 64) return null;
+  const linha = await c.env.DB.prepare(
+    `SELECT u.id, u.nome, u.discord_username FROM sessions s JOIN users u ON u.id = s.user_id
+      WHERE s.id = ? AND s.expira_em > datetime('now') AND u.banido = 0`,
+  )
+    .bind(await sha256(token))
+    .first<{ id: string; nome: string; discord_username: string }>();
+  return linha ? { id: linha.id, nome: linha.nome, discordUsername: linha.discord_username } : null;
+}

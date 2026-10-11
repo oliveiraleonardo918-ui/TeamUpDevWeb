@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Link } from 'react-router';
 import iconeEmail from '../assets/icons/mail.svg';
 import iconeEscudo from '../assets/icons/shield-x.svg';
 import { Aviso } from '../components/Aviso';
+import { Botao } from '../components/Botao';
 import { Cartao } from '../components/Cartao';
 import { Icone } from '../components/Icone';
 import { Layout } from '../components/Layout';
+import { ModalSuporte } from '../components/ModalSuporte';
 import { EMAIL_SUPORTE } from '../lib/config';
 
 /**
@@ -12,6 +15,7 @@ import { EMAIL_SUPORTE } from '../lib/config';
  * do jogador (no protótipo aparece "IvoFluxo, sua conta...").
  */
 export function ContaSuspensa() {
+  const [suporte, setSuporte] = useState(false);
   return (
     <Layout acoes={<p className="text-xs text-destaque">Respeito primeiro</p>}>
       <div className="flex w-full max-w-160 flex-col gap-6 pt-8 lg:pt-18">
@@ -28,16 +32,10 @@ export function ContaSuspensa() {
           <Aviso titulo="Acesso temporariamente bloqueado">
             Buscar, convites e matches estão indisponíveis enquanto sua conta estiver suspensa.
           </Aviso>
-          {EMAIL_SUPORTE && (
-            <a
-              href={`mailto:${EMAIL_SUPORTE}`}
-              className="flex h-12 items-center justify-center gap-2 rounded-lg border border-borda bg-superficie-elevada px-4 font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque"
-            >
-              <Icone src={iconeEmail} tamanho={18} />
-              Falar com o suporte
-            </a>
-          )}
-          {/* Visível para copiar: o mailto não funciona sem um app de e-mail configurado */}
+          <Botao variante="secundario" onClick={() => setSuporte(true)}>
+            <Icone src={iconeEmail} tamanho={18} />
+            Falar com o suporte
+          </Botao>
           <p className="-mt-2 text-center text-xs text-texto-suave">
             ou escreva para <span className="text-texto select-all">{EMAIL_SUPORTE}</span>
           </p>
@@ -50,6 +48,7 @@ export function ContaSuspensa() {
         </Cartao>
         <p className="text-center text-sm text-texto-suave">Você pode pedir uma revisão à equipe de suporte.</p>
       </div>
+      <ModalSuporte aberto={suporte} onFechar={() => setSuporte(false)} assuntoInicial="Revisão de suspensão" />
     </Layout>
   );
 }

@@ -22,9 +22,9 @@ export function notaValida(nota: number): boolean {
   return Number.isInteger(nota) && nota >= 1 && nota <= 5;
 }
 
-/** RNF04: rotas da API que não exigem sessão. */
+/** RNF04: rotas da API que não exigem sessão (suporte é público: quem está banido também precisa pedir revisão). */
 export function rotaPublica(caminho: string): boolean {
-  return caminho === '/api/health' || caminho.startsWith('/api/auth/');
+  return caminho === '/api/health' || caminho === '/api/suporte' || caminho.startsWith('/api/auth/');
 }
 
 export type DecisaoLogin = 'criar' | 'entrar' | 'suspenso' | 'maioridade_pendente';
@@ -257,4 +257,14 @@ export function dadosAnonimizados(userId: string) {
     discordUsername: '',
     nome: NOME_CONTA_EXCLUIDA,
   };
+}
+
+export const MAX_SUPORTE_POR_HORA_IP = 3;
+export const MAX_SUPORTE_POR_DIA = 100;
+
+/** Formulário de suporte (rota pública): limite por IP e teto diário contra spam. */
+export function podeEnviarSuporte(p: { doIpNaUltimaHora: number; totalHoje: number }): 'limite_ip' | 'limite_diario' | null {
+  if (p.doIpNaUltimaHora >= MAX_SUPORTE_POR_HORA_IP) return 'limite_ip';
+  if (p.totalHoje >= MAX_SUPORTE_POR_DIA) return 'limite_diario';
+  return null;
 }
