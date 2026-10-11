@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import type { AppEnv } from './env';
-import { ELOS, etapasConcluidas, funcoesValidas, generoParaSalvar, perfilCompleto, proximaEtapa, riotIdValido } from './rules';
+import { ELOS, etapasConcluidas, notaPublica, funcoesValidas, generoParaSalvar, perfilCompleto, proximaEtapa, riotIdValido } from './rules';
 import { avatarUrl, entradaInvalida } from './util';
 
 const FUNCOES = ['duelista', 'iniciador', 'controlador', 'sentinela'] as const;
@@ -71,6 +71,9 @@ perfil.get('/', async (c) => {
   )
     .bind(u.id)
     .first<LinhaPerfil>();
+  const rep = await c.env.DB.prepare('SELECT AVG(nota) AS media, COUNT(*) AS total FROM ratings WHERE avaliado_id = ?')
+    .bind(u.id)
+    .first<{ media: number | null; total: number }>();
 
   const dados = {
     riotId: linha?.riot_id ?? null,
@@ -93,6 +96,8 @@ perfil.get('/', async (c) => {
     etapas: etapasConcluidas(dados),
     proximaEtapa: proximaEtapa(dados),
     buscaLiberada: perfilCompleto(dados), // RN01
+    // Mesma regra do perfil público: nota só a partir de 3 avaliações
+    reputacao: { nota: notaPublica(rep?.media ?? null, rep?.total ?? 0), total: rep?.total ?? 0 },
   });
 });
 

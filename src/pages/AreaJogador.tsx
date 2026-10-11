@@ -8,6 +8,7 @@ import { Aviso } from '../components/Aviso';
 import { BarraProgresso } from '../components/BarraProgresso';
 import { Botao } from '../components/Botao';
 import { Cartao } from '../components/Cartao';
+import { formatarNota } from '../components/Estrelas';
 import { Icone } from '../components/Icone';
 import { ErroConexao } from '../components/ErroConexao';
 import { Layout } from '../components/Layout';
@@ -188,6 +189,34 @@ export function AreaJogador() {
                 );
               })}
             </ol>
+          </Cartao>
+
+          <Cartao className="flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-xl font-bold">Sua reputação</h2>
+              {dados.reputacao.nota !== null ? (
+                <p className="text-subtitulo font-bold text-estrela">
+                  <span aria-hidden="true">★ </span>
+                  {formatarNota(dados.reputacao.nota)}
+                </p>
+              ) : (
+                <p className="text-sm text-texto-suave">Novo jogador</p>
+              )}
+            </div>
+            <p className="text-sm text-texto-suave">
+              {dados.reputacao.total === 0
+                ? 'Você ainda não recebeu avaliações. Elas aparecem aqui depois dos seus primeiros matches.'
+                : `Você recebeu ${dados.reputacao.total} ${dados.reputacao.total === 1 ? 'avaliação' : 'avaliações'}.${
+                    dados.reputacao.nota === null ? ' A nota aparece a partir de 3.' : ''
+                  }`}
+            </p>
+            {dados.etapas.jogos ? (
+              <Botao variante="secundario" onClick={() => navigate(`/jogadores/${dados.id}`)}>
+                Ver minhas avaliações e meu perfil público
+              </Botao>
+            ) : (
+              <p className="text-xs text-texto-suave">Informe seu Riot ID para ter um perfil público.</p>
+            )}
           </Cartao>
 
           {dados.buscaLiberada ? (

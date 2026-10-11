@@ -36,6 +36,7 @@ export interface RespostaPerfil {
   etapas: Record<Etapa, boolean>;
   proximaEtapa: Etapa | null;
   buscaLiberada: boolean;
+  reputacao: { nota: number | null; total: number };
 }
 
 export const NOMES_ETAPAS: Record<Etapa, string> = {

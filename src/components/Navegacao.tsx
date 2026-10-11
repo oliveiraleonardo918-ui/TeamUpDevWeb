@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import iconeBuscar from '../assets/icons/search.svg';
 import iconeConvites from '../assets/icons/nav-convites.svg';
 import iconeMatches from '../assets/icons/nav-matches.svg';
@@ -29,9 +29,11 @@ const destinos: Destino[] = [
   { rotulo: 'Perfil', para: '/jogador', icone: iconePerfil, tambemEm: ['/perfil/'] },
 ];
 
-function useAtivo() {
+/** `forcado`: a página decide qual item fica ativo (ex.: o próprio perfil público marca "Perfil", não "Buscar"). */
+function useAtivo(forcado?: string) {
   const { pathname } = useLocation();
-  return (d: Destino) => pathname === d.para || (d.tambemEm ?? []).some((p) => pathname.startsWith(p));
+  return (d: Destino) =>
+    forcado ? d.para === forcado : pathname === d.para || (d.tambemEm ?? []).some((p) => pathname.startsWith(p));
 }
 
 const foco = 'rounded-caixa focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque';
@@ -48,8 +50,8 @@ function Selo({ destino, pendentes }: { destino: Destino; pendentes: number }) {
 }
 
 /** Navegação principal no topo (desktop). */
-export function NavegacaoTopo({ eu }: { eu: Me | null }) {
-  const ativo = useAtivo();
+export function NavegacaoTopo({ eu, ativoForcado }: { eu: Me | null; ativoForcado?: string }) {
+  const ativo = useAtivo(ativoForcado);
   const lista = destinosDe(eu);
   const pendentes = eu?.convitesPendentes ?? 0;
   return (
@@ -57,16 +59,16 @@ export function NavegacaoTopo({ eu }: { eu: Me | null }) {
       <ul className={`flex text-center text-base ${lista.length > 4 ? 'w-150' : 'w-120'}`}>
         {lista.map((d) => (
           <li key={d.para} className="flex-1">
-            <NavLink
+            <Link
               to={d.para}
               aria-current={ativo(d) ? 'page' : undefined}
-              className={() =>
+              className={
                 `${foco} ${ativo(d) ? 'font-bold text-destaque underline underline-offset-4' : 'text-texto-suave hover:text-texto'}`
               }
             >
               {d.rotulo}
               <Selo destino={d} pendentes={pendentes} />
-            </NavLink>
+            </Link>
           </li>
         ))}
       </ul>
@@ -75,8 +77,8 @@ export function NavegacaoTopo({ eu }: { eu: Me | null }) {
 }
 
 /** Navegação principal fixa embaixo (celular). */
-export function NavegacaoInferior({ eu }: { eu: Me | null }) {
-  const ativo = useAtivo();
+export function NavegacaoInferior({ eu, ativoForcado }: { eu: Me | null; ativoForcado?: string }) {
+  const ativo = useAtivo(ativoForcado);
   const lista = destinosDe(eu);
   const pendentes = eu?.convitesPendentes ?? 0;
   return (
@@ -87,10 +89,10 @@ export function NavegacaoInferior({ eu }: { eu: Me | null }) {
       <ul className="flex h-full text-center text-2xs">
         {lista.map((d) => (
           <li key={d.para} className="flex-1">
-            <NavLink
+            <Link
               to={d.para}
               aria-current={ativo(d) ? 'page' : undefined}
-              className={() =>
+              className={
                 `flex flex-col items-center gap-1.75 ${foco} ${ativo(d) ? 'font-bold text-destaque' : 'text-texto-suave'}`
               }
             >
@@ -99,7 +101,7 @@ export function NavegacaoInferior({ eu }: { eu: Me | null }) {
                 {d.rotulo}
                 <Selo destino={d} pendentes={pendentes} />
               </span>
-            </NavLink>
+            </Link>
           </li>
         ))}
       </ul>

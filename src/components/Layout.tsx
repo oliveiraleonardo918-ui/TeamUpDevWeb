@@ -15,10 +15,13 @@ const linkRodape =
 export function Layout({
   acoes,
   navegacao = false,
+  menuAtivo,
   children,
 }: {
   acoes?: ReactNode;
   navegacao?: boolean;
+  /** Força o item ativo do menu (caminho do destino, ex.: "/jogador") */
+  menuAtivo?: string;
   children: ReactNode;
 }) {
   const [eu, setEu] = useState<Me | null>(null);
@@ -44,7 +47,7 @@ export function Layout({
         >
           TeamUp<span className="text-destaque">.</span>
         </Link>
-        {navegacao ? <NavegacaoTopo eu={eu} /> : acoes}
+        {navegacao ? <NavegacaoTopo eu={eu} ativoForcado={menuAtivo} /> : acoes}
       </header>
 
       <main className="flex flex-1 flex-col items-center gap-7 px-6 pt-7 pb-8 lg:px-32 lg:py-12">
@@ -66,7 +69,7 @@ export function Layout({
         </nav>
       </footer>
 
-      {navegacao && <NavegacaoInferior eu={eu} />}
+      {navegacao && <NavegacaoInferior eu={eu} ativoForcado={menuAtivo} />}
     </div>
   );
 }

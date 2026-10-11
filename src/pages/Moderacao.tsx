@@ -99,9 +99,16 @@ export function Moderacao() {
             )}
           </section>
 
-          {dados.banidos.length > 0 && (
-            <section className="flex w-full flex-col gap-4">
+          <section className="flex w-full flex-col gap-4">
+            <div className="flex items-center justify-between gap-3">
               <h2 className="text-nome font-bold">Contas suspensas</h2>
+              <p className="text-xs text-texto-suave">
+                {admin ? 'Revise o pedido antes de remover um banimento.' : 'Só admins podem remover banimentos.'}
+              </p>
+            </div>
+            {dados.banidos.length === 0 ? (
+              <Cartao className="text-center text-texto-suave">Nenhuma conta suspensa.</Cartao>
+            ) : (
               <Cartao className="flex flex-col gap-3">
                 {dados.banidos.map((b) => (
                   <div
@@ -130,8 +137,8 @@ export function Moderacao() {
                   </div>
                 ))}
               </Cartao>
-            </section>
-          )}
+            )}
+          </section>
 
           <Aviso tom="info" titulo="Proteja a identidade de quem denuncia">
             As denúncias são anônimas para o denunciado. Estes dados são visíveis apenas à equipe de moderação.
