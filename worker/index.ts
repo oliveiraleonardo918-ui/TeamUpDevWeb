@@ -5,6 +5,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import { auth } from './auth';
 import { convites, matches } from './convites';
 import type { AppEnv } from './env';
+import { equipe } from './equipe';
 import { jogadores } from './jogadores';
 import { perfil } from './perfil';
 import { rotaPublica } from './rules';
@@ -27,15 +28,22 @@ app.get('/health', async (c) => {
 
 app.route('/auth', auth);
 
-// Dados do próprio usuário logado
-app.get('/me', (c) => {
+// Dados do próprio usuário logado + selo de convites do menu (uma requisição por página)
+app.get('/me', async (c) => {
   const u = c.var.usuario;
+  const convites = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM invites i JOIN users d ON d.id = i.de_user
+      WHERE i.para_user = ? AND i.status = 'pendente' AND d.banido = 0`,
+  )
+    .bind(u.id)
+    .first<{ n: number }>();
   return c.json({
     id: u.id,
     nome: u.nome,
     discordUsername: u.discordUsername,
     avatarUrl: u.avatar ? `https://cdn.discordapp.com/avatars/${u.discordId}/${u.avatar}.png?size=128` : null,
-    isAdmin: u.isAdmin,
+    papel: u.papel,
+    convitesPendentes: convites?.n ?? 0,
   });
 });
 
@@ -43,6 +51,7 @@ app.route('/perfil', perfil);
 app.route('/jogadores', jogadores);
 app.route('/convites', convites);
 app.route('/matches', matches);
+app.route('/equipe', equipe);
 
 app.notFound((c) => c.json({ error: 'not_found' }, 404));
 

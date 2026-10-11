@@ -173,3 +173,34 @@ export function podeAvaliar(p: {
   if (p.jaAvaliou) return 'ja_avaliado';
   return null;
 }
+
+export type Papel = 'jogador' | 'moderador' | 'admin';
+
+/** IDs do Discord da variável ADMIN_DISCORD_IDS ("123,456"), ignorando espaços e itens vazios. */
+export function listaAdmins(config: string | undefined): Set<string> {
+  return new Set((config ?? '').split(',').map((s) => s.trim()).filter((s) => /^\d{1,20}$/.test(s)));
+}
+
+/** Admin vem só da configuração; o banco guarda no máximo "moderador". */
+export function papelEfetivo(discordId: string, papelNoBanco: string, admins: Set<string>): Papel {
+  if (admins.has(discordId)) return 'admin';
+  return papelNoBanco === 'moderador' ? 'moderador' : 'jogador';
+}
+
+/** RF12: ver denúncias, arquivar e banir. */
+export function podeModerar(papel: Papel): boolean {
+  return papel === 'moderador' || papel === 'admin';
+}
+
+/** Promover e remover moderadores: só admin, e só sobre outra pessoa com o papel certo. */
+export function podeMudarModerador(p: {
+  ator: { id: string; papel: Papel };
+  alvo: { id: string; papel: Papel; banido: boolean };
+  acao: 'promover' | 'remover';
+}): 'sem_permissao' | 'proprio_usuario' | 'papel_invalido' | null {
+  if (p.ator.papel !== 'admin') return 'sem_permissao';
+  if (p.ator.id === p.alvo.id) return 'proprio_usuario';
+  if (p.acao === 'promover' && (p.alvo.papel !== 'jogador' || p.alvo.banido)) return 'papel_invalido';
+  if (p.acao === 'remover' && p.alvo.papel !== 'moderador') return 'papel_invalido';
+  return null;
+}

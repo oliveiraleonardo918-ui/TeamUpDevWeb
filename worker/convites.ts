@@ -97,17 +97,6 @@ convites.get('/', async (c) => {
   return c.json({ recebidos: recebidos.results.map(paraConvite), enviados: enviados.results.map(paraConvite) });
 });
 
-/** Contagem para o selo do menu ("Convites ❷"). */
-convites.get('/contagem', async (c) => {
-  const linha = await c.env.DB.prepare(
-    `SELECT COUNT(*) AS n FROM invites i JOIN users u ON u.id = i.de_user
-      WHERE i.para_user = ? AND i.status = 'pendente' AND u.banido = 0`,
-  )
-    .bind(c.var.usuario.id)
-    .first<{ n: number }>();
-  return c.json({ pendentes: linha?.n ?? 0 });
-});
-
 convites.post('/', zValidator('json', z.object({ para: z.string().uuid() }), entradaInvalida), async (c) => {
   const eu = c.var.usuario.id;
   const { para } = c.req.valid('json');

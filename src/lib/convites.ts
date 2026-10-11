@@ -40,7 +40,6 @@ export const COMENTARIO_MAX = 280;
 export const ROTULOS_NOTA = ['', 'Não foi uma boa parceria', 'Parceria difícil', 'Parceria ok', 'Boa parceria', 'Excelente parceria'];
 
 export const buscarConvites = () => api.get<{ recebidos: Convite[]; enviados: Convite[] }>('/convites');
-export const contarConvitesPendentes = () => api.get<{ pendentes: number }>('/convites/contagem');
 export const enviarConvite = (para: string) => api.post<{ id: string }>('/convites', { para });
 export const aceitarConvite = (id: string) => api.post<{ matchId: string }>(`/convites/${encodeURIComponent(id)}/aceitar`);
 export const recusarConvite = (id: string) => api.post<null>(`/convites/${encodeURIComponent(id)}/recusar`);

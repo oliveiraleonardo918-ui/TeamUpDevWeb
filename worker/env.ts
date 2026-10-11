@@ -1,4 +1,5 @@
 // Tipos compartilhados do Worker. `Env` vem do `wrangler types` (worker-configuration.d.ts).
+import type { Papel } from './rules';
 
 export interface Usuario {
   id: string;
@@ -6,7 +7,8 @@ export interface Usuario {
   nome: string;
   discordUsername: string;
   avatar: string | null;
-  isAdmin: boolean;
+  /** admin vem de ADMIN_DISCORD_IDS; moderador, do banco */
+  papel: Papel;
 }
 
 export type AppEnv = {
