@@ -4,6 +4,7 @@ import { HTTPException } from 'hono/http-exception';
 import { secureHeaders } from 'hono/secure-headers';
 import { auth } from './auth';
 import type { AppEnv } from './env';
+import { perfil } from './perfil';
 import { rotaPublica } from './rules';
 import { exigirSessao } from './sessao';
 
@@ -35,6 +36,8 @@ app.get('/me', (c) => {
     isAdmin: u.isAdmin,
   });
 });
+
+app.route('/perfil', perfil);
 
 app.notFound((c) => c.json({ error: 'not_found' }, 404));
 
