@@ -23,7 +23,8 @@ export interface AvaliacaoRecebida {
   autorAvatarUrl: string | null;
   data: string;
   nota: number | null;
-  comentario: string;
+  /** null quando a pessoa deu só as estrelas */
+  comentario: string | null;
 }
 
 export type Relacao = 'nenhuma' | 'convite_enviado' | 'convite_recebido' | 'match' | 'proprio';

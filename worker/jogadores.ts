@@ -72,7 +72,7 @@ jogadores.get('/', zValidator('query', filtrosSchema, entradaInvalida), async (c
        FROM profiles p
        JOIN users u ON u.id = p.user_id
        LEFT JOIN (SELECT avaliado_id, AVG(nota) AS media, COUNT(*) AS total
-                    FROM ratings GROUP BY avaliado_id) r ON r.avaliado_id = u.id
+                    FROM ratings_validas GROUP BY avaliado_id) r ON r.avaliado_id = u.id
       WHERE u.banido = 0
         AND u.id <> ?1
         AND p.riot_id IS NOT NULL AND p.riot_id <> ''
@@ -128,7 +128,7 @@ interface LinhaPublica {
 
 interface LinhaAvaliacao {
   nota: number;
-  comentario: string;
+  comentario: string | null;
   criado_em: string;
   autor_id: string;
   autor_nome: string;
@@ -154,17 +154,18 @@ jogadores.get(
       .first<LinhaPublica>();
     if (!linha) return c.json({ error: 'not_found' }, 404);
 
+    // Todas as avaliações válidas (com ou sem comentário); as de contas banidas ficam fora (view ratings_validas)
     const [distribuicao, comentarios] = await Promise.all([
       db
-        .prepare('SELECT nota, COUNT(*) AS total FROM ratings WHERE avaliado_id = ? GROUP BY nota')
+        .prepare('SELECT nota, COUNT(*) AS total FROM ratings_validas WHERE avaliado_id = ? GROUP BY nota')
         .bind(id)
         .all<{ nota: number; total: number }>(),
       db
         .prepare(
           `SELECT r.nota, r.comentario, r.criado_em, a.id AS autor_id, a.nome AS autor_nome,
                   a.discord_id AS autor_discord_id, a.avatar AS autor_avatar
-             FROM ratings r JOIN users a ON a.id = r.autor_id
-            WHERE r.avaliado_id = ? AND r.comentario IS NOT NULL AND r.comentario <> '' AND a.banido = 0
+             FROM ratings_validas r JOIN users a ON a.id = r.autor_id
+            WHERE r.avaliado_id = ?
             ORDER BY r.criado_em DESC
             LIMIT ?`,
         )

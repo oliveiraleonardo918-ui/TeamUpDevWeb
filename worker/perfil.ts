@@ -71,7 +71,7 @@ perfil.get('/', async (c) => {
   )
     .bind(u.id)
     .first<LinhaPerfil>();
-  const rep = await c.env.DB.prepare('SELECT AVG(nota) AS media, COUNT(*) AS total FROM ratings WHERE avaliado_id = ?')
+  const rep = await c.env.DB.prepare('SELECT AVG(nota) AS media, COUNT(*) AS total FROM ratings_validas WHERE avaliado_id = ?')
     .bind(u.id)
     .first<{ media: number | null; total: number }>();
 

@@ -320,7 +320,7 @@ function ConfirmarAcao({ acao, onFechar, onFeito }: { acao: Acao; onFechar: () =
           </div>
           <p className="text-sm">
             {banindo
-              ? 'A conta perderá acesso ao TeamUp e não poderá buscar jogadores, enviar convites ou formar novos matches.'
+              ? 'A conta perderá acesso ao TeamUp e não poderá buscar jogadores, enviar convites ou formar novos matches. As avaliações que ela fez deixam de contar na reputação de outras pessoas.'
               : 'A conta volta a poder entrar e aparecer na busca. Use após analisar o pedido de revisão.'}
           </p>
           <AreaTexto
