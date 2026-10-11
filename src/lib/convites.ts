@@ -15,14 +15,29 @@ export interface ItemMatch {
   id: string;
   data: string;
   jogador: { id: string; nome: string; elo: Elo | null; funcaoPrimaria: Funcao | null };
+  minhaAvaliacao: { nota: number; data: string } | null;
 }
 
 export interface DetalheMatch {
   id: string;
   data: string;
   eu: { id: string; nome: string };
-  parceiro: { id: string; nome: string; riotId: string | null; discordUsername: string; discordUrl: string };
+  parceiro: {
+    id: string;
+    nome: string;
+    riotId: string | null;
+    discordUsername: string;
+    discordUrl: string;
+    /** nota null = menos de 3 avaliações */
+    reputacao: { nota: number | null; total: number };
+  };
+  minhaAvaliacao: { nota: number; comentario: string | null; data: string } | null;
 }
+
+export const COMENTARIO_MAX = 280;
+
+/** Rótulo de cada nota na tela de avaliação. */
+export const ROTULOS_NOTA = ['', 'Não foi uma boa parceria', 'Parceria difícil', 'Parceria ok', 'Boa parceria', 'Excelente parceria'];
 
 export const buscarConvites = () => api.get<{ recebidos: Convite[]; enviados: Convite[] }>('/convites');
 export const contarConvitesPendentes = () => api.get<{ pendentes: number }>('/convites/contagem');
@@ -32,6 +47,11 @@ export const recusarConvite = (id: string) => api.post<null>(`/convites/${encode
 
 export const buscarMatches = () => api.get<{ matches: ItemMatch[] }>('/matches');
 export const buscarMatch = (id: string) => api.get<DetalheMatch>(`/matches/${encodeURIComponent(id)}`);
+export const avaliarMatch = (id: string, nota: number, comentario: string) =>
+  api.post<{ reputacao: { nota: number | null; total: number } }>(`/matches/${encodeURIComponent(id)}/avaliacao`, {
+    nota,
+    comentario,
+  });
 
 /** Mensagens para os bloqueios de convite (códigos do servidor, worker/rules.ts podeConvidar). */
 export const MENSAGENS_CONVITE: Record<string, string> = {

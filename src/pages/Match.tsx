@@ -94,9 +94,14 @@ function Conteudo({ m }: { m: DetalheMatch }) {
         Sua experiência ajuda a manter a comunidade acolhedora e respeitosa.
       </Aviso>
 
-      <Botao variante="secundario" onClick={() => navigate('/matches')}>
-        Ver Matches
-      </Botao>
+      <div className="flex gap-3">
+        <Botao variante="secundario" className="flex-1" onClick={() => navigate('/matches')}>
+          Ver Matches
+        </Botao>
+        <Botao className="flex-1" onClick={() => navigate(`/matches/${m.id}/avaliar`)}>
+          {m.minhaAvaliacao ? 'Ver sua avaliação' : 'Avaliar parceiro'}
+        </Botao>
+      </div>
     </>
   );
 }

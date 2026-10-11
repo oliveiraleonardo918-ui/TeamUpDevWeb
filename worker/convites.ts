@@ -1,10 +1,18 @@
-// RF07 (enviar convite), RF08 (ver, aceitar e recusar) e RF09 (contatos após o match).
+// RF07 (enviar convite), RF08 (ver, aceitar e recusar), RF09 (contatos após o match) e RF10 (avaliação).
 // RN02: match só com aceite mútuo; Riot ID e Discord só para os dois participantes.
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import type { AppEnv } from './env';
-import { DIAS_APOS_RECUSA, notaPublica, perfilCompleto, podeConvidar } from './rules';
+import {
+  COMENTARIO_MAX,
+  DIAS_APOS_RECUSA,
+  notaPublica,
+  notaValida,
+  perfilCompleto,
+  podeAvaliar,
+  podeConvidar,
+} from './rules';
 import { conviteEntre, entradaInvalida, lerTurnos, naoEncontrado } from './util';
 
 const LIMITE_LISTA = 50;
@@ -185,22 +193,34 @@ export const matches = new Hono<AppEnv>();
 matches.get('/', async (c) => {
   const { results } = await c.env.DB.prepare(
     `SELECT i.id, COALESCE(i.respondido_em, i.criado_em) AS data,
-            u.id AS uid, u.nome, p.elo, p.funcao_primaria
+            u.id AS uid, u.nome, p.elo, p.funcao_primaria,
+            mr.nota AS minha_nota, mr.criado_em AS avaliado_em
        FROM invites i
        JOIN users u ON u.id = CASE WHEN i.de_user = ?1 THEN i.para_user ELSE i.de_user END
        LEFT JOIN profiles p ON p.user_id = u.id
+       LEFT JOIN ratings mr ON mr.invite_id = i.id AND mr.autor_id = ?1
       WHERE i.status = 'aceito' AND (i.de_user = ?1 OR i.para_user = ?1) AND u.banido = 0
       ORDER BY data DESC
       LIMIT 100`,
   )
     .bind(c.var.usuario.id)
-    .all<{ id: string; data: string; uid: string; nome: string; elo: string | null; funcao_primaria: string | null }>();
+    .all<{
+      id: string;
+      data: string;
+      uid: string;
+      nome: string;
+      elo: string | null;
+      funcao_primaria: string | null;
+      minha_nota: number | null;
+      avaliado_em: string | null;
+    }>();
 
   return c.json({
     matches: results.map((m) => ({
       id: m.id,
       data: m.data,
       jogador: { id: m.uid, nome: m.nome, elo: m.elo, funcaoPrimaria: m.funcao_primaria },
+      minhaAvaliacao: m.minha_nota === null ? null : { nota: m.minha_nota, data: m.avaliado_em },
     })),
   });
 });
@@ -211,10 +231,15 @@ matches.get('/:id', zValidator('param', idSchema, naoEncontrado), async (c) => {
   const { id } = c.req.valid('param');
   const linha = await c.env.DB.prepare(
     `SELECT i.id, COALESCE(i.respondido_em, i.criado_em) AS data,
-            u.id AS uid, u.nome, u.discord_username, u.discord_id, p.riot_id
+            u.id AS uid, u.nome, u.discord_username, u.discord_id, p.riot_id,
+            mr.nota AS minha_nota, mr.comentario AS meu_comentario, mr.criado_em AS avaliado_em,
+            r.media, COALESCE(r.total, 0) AS total
        FROM invites i
        JOIN users u ON u.id = CASE WHEN i.de_user = ?2 THEN i.para_user ELSE i.de_user END
        LEFT JOIN profiles p ON p.user_id = u.id
+       LEFT JOIN ratings mr ON mr.invite_id = i.id AND mr.autor_id = ?2
+       LEFT JOIN (SELECT avaliado_id, AVG(nota) AS media, COUNT(*) AS total
+                    FROM ratings GROUP BY avaliado_id) r ON r.avaliado_id = u.id
       WHERE i.id = ?1 AND i.status = 'aceito' AND (i.de_user = ?2 OR i.para_user = ?2) AND u.banido = 0`,
   )
     .bind(id, eu.id)
@@ -226,6 +251,11 @@ matches.get('/:id', zValidator('param', idSchema, naoEncontrado), async (c) => {
       discord_username: string;
       discord_id: string;
       riot_id: string | null;
+      minha_nota: number | null;
+      meu_comentario: string | null;
+      avaliado_em: string | null;
+      media: number | null;
+      total: number;
     }>();
   if (!linha) return c.json({ error: 'not_found' }, 404);
 
@@ -240,6 +270,67 @@ matches.get('/:id', zValidator('param', idSchema, naoEncontrado), async (c) => {
       discordUsername: linha.discord_username,
       // discord_id só tem dígitos (validado no login)
       discordUrl: `https://discord.com/users/${linha.discord_id}`,
+      reputacao: { nota: notaPublica(linha.media, linha.total), total: linha.total },
     },
+    minhaAvaliacao:
+      linha.minha_nota === null
+        ? null
+        : { nota: linha.minha_nota, comentario: linha.meu_comentario, data: linha.avaliado_em },
   });
 });
+
+const avaliacaoSchema = z.object({
+  nota: z.number().int().refine(notaValida, 'nota_invalida'),
+  comentario: z.string().trim().max(COMENTARIO_MAX).optional(),
+});
+
+/** RF10 + RN04: avaliar o parceiro do match, uma vez. */
+matches.post(
+  '/:id/avaliacao',
+  zValidator('param', idSchema, naoEncontrado),
+  zValidator('json', avaliacaoSchema, entradaInvalida),
+  async (c) => {
+    const eu = c.var.usuario.id;
+    const { id } = c.req.valid('param');
+    const { nota, comentario } = c.req.valid('json');
+    const db = c.env.DB;
+
+    const match = await db
+      .prepare(
+        `SELECT i.status, i.de_user, i.para_user,
+                (SELECT 1 FROM ratings WHERE invite_id = i.id AND autor_id = ?2) AS ja_avaliou
+           FROM invites i
+           JOIN users u ON u.id = CASE WHEN i.de_user = ?2 THEN i.para_user ELSE i.de_user END
+          WHERE i.id = ?1 AND u.banido = 0`,
+      )
+      .bind(id, eu)
+      .first<{ status: string; de_user: string; para_user: string; ja_avaliou: number | null }>();
+
+    const motivo = podeAvaliar({
+      participante: match !== null && (match.de_user === eu || match.para_user === eu),
+      matchAceito: match?.status === 'aceito',
+      jaAvaliou: match?.ja_avaliou === 1,
+    });
+    if (motivo === 'nao_encontrado' || !match) return c.json({ error: 'not_found' }, 404);
+    if (motivo) return c.json({ error: motivo }, 409);
+
+    const avaliado = match.de_user === eu ? match.para_user : match.de_user;
+    try {
+      await db
+        .prepare(
+          'INSERT INTO ratings (id, invite_id, autor_id, avaliado_id, nota, comentario) VALUES (?, ?, ?, ?, ?, ?)',
+        )
+        .bind(crypto.randomUUID(), id, eu, avaliado, nota, comentario || null)
+        .run();
+    } catch {
+      // UNIQUE(invite_id, autor_id): envio duplicado ao mesmo tempo
+      return c.json({ error: 'ja_avaliado' }, 409);
+    }
+
+    const rep = await db
+      .prepare('SELECT AVG(nota) AS media, COUNT(*) AS total FROM ratings WHERE avaliado_id = ?')
+      .bind(avaliado)
+      .first<{ media: number | null; total: number }>();
+    return c.json({ reputacao: { nota: notaPublica(rep?.media ?? null, rep?.total ?? 0), total: rep?.total ?? 0 } }, 201);
+  },
+);
