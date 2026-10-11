@@ -291,3 +291,22 @@ export function validarEvidencias(
   if (arquivos.some((a) => a.tipo === null)) return 'evidencia_tipo';
   return null;
 }
+
+export type MotivoSemAcao = 'conflito_interesse' | 'alvo_admin' | 'alvo_moderador';
+
+/**
+ * RF12: quem pode tratar (arquivar ou banir) uma denúncia, olhando quem é o denunciado.
+ * - Ninguém trata denúncia contra si mesmo (conflito de interesse).
+ * - Denúncia contra moderador: só admin trata.
+ * - Admin não é banido pela interface; a denúncia contra admin pode ser arquivada por outro admin.
+ */
+export function podeTratarDenuncia(
+  ator: { id: string; papel: Papel },
+  denunciado: { id: string; papel: Papel },
+  acao: 'arquivar' | 'banir',
+): MotivoSemAcao | null {
+  if (ator.id === denunciado.id) return 'conflito_interesse';
+  if (denunciado.papel === 'admin') return acao === 'banir' || ator.papel !== 'admin' ? 'alvo_admin' : null;
+  if (denunciado.papel === 'moderador' && ator.papel !== 'admin') return 'alvo_moderador';
+  return null;
+}

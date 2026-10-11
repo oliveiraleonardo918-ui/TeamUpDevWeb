@@ -322,6 +322,7 @@ Toda resposta que traz pessoas inclui `avatarUrl` (foto do Discord, montada e va
 | Papéis | `listaAdmins`, `papelEfetivo`, `podeModerar`, `podeMudarModerador` | `sessao.ts`, `equipe.ts` |
 | RF11 denúncia | `podeDenunciar` | `moderacao.ts` |
 | RF12 / RN07 banimento | `podeBanir`, `podeDesbanir` | `moderacao.ts` |
+| RF12 quem trata a denúncia | `podeTratarDenuncia` (sem conflito de interesse; denúncia contra moderador só com admin) | `moderacao.ts` |
 | RNF09 exclusão | `dadosAnonimizados` | `index.ts` |
 | RF11 evidências | `tipoImagem`, `validarEvidencias` | `moderacao.ts` |
 | Suporte anti-spam | `podeEnviarSuporte` | `suporte.ts` |

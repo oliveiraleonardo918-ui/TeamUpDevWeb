@@ -13,6 +13,7 @@ import {
   podeDenunciar,
   podeDesbanir,
   podeModerar,
+  podeTratarDenuncia,
   tipoImagem,
   validarEvidencias,
 } from './rules';
@@ -174,7 +175,10 @@ moderacao.get('/', async (c) => {
       arquivadasHoje: resumo?.arquivadas_hoje ?? 0,
       contasSuspensas: resumo?.suspensas ?? 0,
     },
-    denuncias: abertas.results.map((d) => ({
+    denuncias: abertas.results.map((d) => {
+      const denunciado = { id: d.alvo_id, papel: papelEfetivo(d.alvo_discord_id, d.alvo_papel, admins) };
+      const eu = { id: c.var.usuario.id, papel: c.var.usuario.papel };
+      return {
       id: d.id,
       motivo: d.motivo,
       descricao: d.descricao,
@@ -187,7 +191,13 @@ moderacao.get('/', async (c) => {
         papel: papelEfetivo(d.alvo_discord_id, d.alvo_papel, admins),
       },
       evidencias: porDenuncia(evidencias.results, d.id),
-    })),
+      // O que quem está vendo pode fazer (null = pode); a tela mostra o motivo quando não pode
+      bloqueio: {
+        arquivar: podeTratarDenuncia(eu, denunciado, 'arquivar'),
+        banir: podeTratarDenuncia(eu, denunciado, 'banir'),
+      },
+      };
+    }),
   });
 });
 
@@ -290,10 +300,22 @@ moderacao.post(
     const { id } = c.req.valid('param');
     const { motivo } = c.req.valid('json');
     const eu = c.var.usuario.id;
-    const denuncia = await c.env.DB.prepare("SELECT denunciado_id FROM reports WHERE id = ? AND status = 'aberta'")
+    const denuncia = await c.env.DB.prepare(
+      `SELECT r.denunciado_id, d.discord_id, d.papel FROM reports r JOIN users d ON d.id = r.denunciado_id
+        WHERE r.id = ? AND r.status = 'aberta'`,
+    )
       .bind(id)
-      .first<{ denunciado_id: string }>();
+      .first<{ denunciado_id: string; discord_id: string; papel: string }>();
     if (!denuncia) return c.json({ error: 'denuncia_indisponivel' }, 404);
+    const bloqueio = podeTratarDenuncia(
+      { id: eu, papel: c.var.usuario.papel },
+      {
+        id: denuncia.denunciado_id,
+        papel: papelEfetivo(denuncia.discord_id, denuncia.papel, listaAdmins(c.env.ADMIN_DISCORD_IDS)),
+      },
+      'arquivar',
+    );
+    if (bloqueio) return c.json({ error: bloqueio }, 403);
 
     await c.env.DB.batch([
       c.env.DB.prepare(
@@ -332,14 +354,10 @@ moderacao.post(
     const alvo = await db.prepare('SELECT id, discord_id, papel, banido FROM users WHERE id = ?').bind(id).first<LinhaUsuario>();
     if (!alvo) return c.json({ error: 'not_found' }, 404);
 
-    const erro = podeBanir(
-      { id: eu.id, papel: eu.papel },
-      {
-        id: alvo.id,
-        papel: papelEfetivo(alvo.discord_id, alvo.papel, listaAdmins(c.env.ADMIN_DISCORD_IDS)),
-        banido: alvo.banido === 1,
-      },
-    );
+    const papelAlvo = papelEfetivo(alvo.discord_id, alvo.papel, listaAdmins(c.env.ADMIN_DISCORD_IDS));
+    const bloqueio = podeTratarDenuncia({ id: eu.id, papel: eu.papel }, { id: alvo.id, papel: papelAlvo }, 'banir');
+    if (bloqueio) return c.json({ error: bloqueio }, 403);
+    const erro = podeBanir({ id: eu.id, papel: eu.papel }, { id: alvo.id, papel: papelAlvo, banido: alvo.banido === 1 });
     if (erro) return c.json({ error: erro }, erro === 'sem_permissao' ? 403 : 409);
 
     await db.batch([
