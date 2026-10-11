@@ -1,0 +1,5 @@
+# Finais de linha LF no repositório, mesmo editando no Windows
+# (evita diffs falsos e quebra de scripts/arquivos com tab, como o rules.tsv do ZAP).
+* text=auto eol=lf
+*.png binary
+*.ico binary

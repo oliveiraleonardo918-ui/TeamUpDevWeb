@@ -9,6 +9,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:staging": "tsc -b && vite build --mode staging",
+    "build:prod": "tsc -b && vite build --mode prod",
+    "deploy:staging": "npm run db:migrate:staging && npm run build:staging && wrangler deploy",
+    "deploy:prod": "npm run db:migrate:production && npm run build:prod && wrangler deploy",
     "preview": "vite preview",
     "lint": "eslint .",
     "typecheck": "tsc -b",

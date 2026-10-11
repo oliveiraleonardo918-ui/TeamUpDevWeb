@@ -12,6 +12,8 @@ npm run dev                       # http://localhost:5173
 ```
 
 Scripts: `lint`, `typecheck`, `test`, `build`, `preview`, `cf-typegen` (rodar após mudar o `wrangler.jsonc`).
+Deploy manual (normalmente quem faz é o pipeline): `npm run deploy:staging` e `npm run deploy:prod`.
+Funciona igual no Windows (PowerShell), Linux e macOS.
 
 ## Pipeline
 
@@ -40,6 +42,7 @@ docker run --rm --network host -v "$PWD/zap-wrk:/zap/wrk:rw" ghcr.io/zaproxy/zap
 
 1. **Cloudflare:** criar os bancos e colar os IDs no `wrangler.jsonc`:
    `npx wrangler d1 create teamup-staging` e `npx wrangler d1 create teamup-production`.
+   Produção sai em `teamup.<subdominio>.workers.dev`; para usar domínio próprio, veja o comentário no `wrangler.jsonc`.
 2. **API token** (Cloudflare → My Profile → API Tokens) com: Workers Scripts:Edit, D1:Edit
    e, para o domínio de produção, Workers Routes:Edit na zona.
 3. **GitHub → Settings → Environments:** criar `staging` e `production`, cada um com os secrets
@@ -54,5 +57,5 @@ docker run --rm --network host -v "$PWD/zap-wrk:/zap/wrk:rw" ghcr.io/zaproxy/zap
 ## WAF (plano Free)
 
 Precisa de um domínio próprio na Cloudflare: o WAF age na zona, não no `*.workers.dev`.
-Por isso produção usa `custom_domain` com `workers_dev: false` e `preview_urls: false`.
+Quando tiverem domínio, produção passa a usar `custom_domain` com `workers_dev: false` (instruções no `wrangler.jsonc`).
 Regras sugeridas estão no documento de requisitos.

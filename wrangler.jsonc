@@ -38,11 +38,12 @@
     },
     "production": {
       "name": "teamup",
-      // Desliga *.workers.dev e preview URLs: o tráfego só entra pelo
-      // domínio próprio, onde o WAF da zona fica na frente do Worker.
-      "workers_dev": false,
+      // Sem domínio próprio: publica em teamup.<subdominio>.workers.dev.
+      // Quando tiverem domínio (e WAF), troque workers_dev para false e adicione:
+      //   "routes": [{ "pattern": "teamup.seudominio.com.br", "custom_domain": true }],
+      // Assim o tráfego só entra pelo domínio, onde o WAF fica na frente do Worker.
+      "workers_dev": true,
       "preview_urls": false,
-      "routes": [{ "pattern": "teamup.SEU-DOMINIO.com.br", "custom_domain": true }],
       "vars": { "APP_ENV": "production" },
       "d1_databases": [
         {

@@ -47,9 +47,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
       # Migrations antes do deploy: precisam ser compatíveis com a versão anterior do código
       - run: npm run db:migrate:staging
-      - run: npm run build
-        env:
-          CLOUDFLARE_ENV: staging
+      - run: npm run build:staging
       - run: npx wrangler deploy
       - name: Smoke test
         run: curl -fsS --retry 5 --retry-delay 3 --retry-all-errors "${{ vars.APP_URL }}/api/health"
@@ -75,9 +73,7 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run db:migrate:production
-      - run: npm run build
-        env:
-          CLOUDFLARE_ENV: production
+      - run: npm run build:prod
       - run: npx wrangler deploy
       - name: Smoke test
         run: curl -fsS --retry 5 --retry-delay 3 --retry-all-errors "${{ vars.APP_URL }}/api/health"
