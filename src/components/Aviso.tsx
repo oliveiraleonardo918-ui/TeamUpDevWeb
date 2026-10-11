@@ -1,10 +1,24 @@
 import type { ReactNode } from 'react';
 
-/** Caixa de alerta vermelha (componente "Aviso" do protótipo). */
-export function Aviso({ titulo, children }: { titulo: string; children?: ReactNode }) {
+const tons = {
+  perigo: { caixa: 'bg-perigo-fundo', titulo: 'text-perigo', papel: 'alert' },
+  info: { caixa: 'bg-destaque-fundo', titulo: 'text-destaque', papel: 'note' },
+} as const;
+
+/** Caixa de aviso (componente "Aviso" do protótipo): vermelha para erro, verde-água para informação. */
+export function Aviso({
+  titulo,
+  tom = 'perigo',
+  children,
+}: {
+  titulo: string;
+  tom?: keyof typeof tons;
+  children?: ReactNode;
+}) {
+  const t = tons[tom];
   return (
-    <div role="alert" className="w-full rounded-lg bg-perigo-fundo p-4">
-      <p className="font-bold text-perigo">{titulo}</p>
+    <div role={t.papel} className={`w-full rounded-lg p-4 ${t.caixa}`}>
+      <p className={`font-bold ${t.titulo}`}>{titulo}</p>
       {children && <p className="text-sm text-texto">{children}</p>}
     </div>
   );

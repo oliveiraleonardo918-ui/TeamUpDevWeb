@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router';
 import { AreaJogador } from './pages/AreaJogador';
 import { ContaSuspensa } from './pages/ContaSuspensa';
+import { EditarPerfil } from './pages/EditarPerfil';
 import { Entrar } from './pages/Entrar';
 import { NaoEncontrada } from './pages/NaoEncontrada';
 
@@ -9,6 +10,7 @@ export function App() {
     <Routes>
       <Route path="/" element={<Entrar />} />
       <Route path="/jogador" element={<AreaJogador />} />
+      <Route path="/perfil/:etapa" element={<EditarPerfil />} />
       <Route path="/suspensa" element={<ContaSuspensa />} />
       <Route path="*" element={<NaoEncontrada />} />
     </Routes>

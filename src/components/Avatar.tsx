@@ -5,6 +5,7 @@ const cores = {
 
 const tamanhos = {
   md: 'size-14 text-lg',
+  perfil: 'size-16 text-lg',
   lg: 'size-14 text-lg lg:size-18 lg:text-3xl',
 } as const;
 

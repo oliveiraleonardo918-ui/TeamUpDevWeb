@@ -31,6 +31,12 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: data === undefined ? undefined : JSON.stringify(data),
     }),
+  put: <T>(path: string, data: unknown) =>
+    request<T>(path, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
 };
 
 /** Inicia o OAuth do Discord (navegação de página inteira, não fetch). `maior18`: declaração do RN06. */

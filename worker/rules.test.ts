@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { decidirLogin, funcaoComplementar, notaValida, perfilCompleto, rotaPublica } from './rules';
+import {
+  decidirLogin,
+  etapasConcluidas,
+  funcaoComplementar,
+  funcoesValidas,
+  generoParaSalvar,
+  notaValida,
+  perfilCompleto,
+  proximaEtapa,
+  riotIdValido,
+  rotaPublica,
+} from './rules';
 
 describe('RN01 - perfil mínimo', () => {
   it('bloqueia perfil sem Riot ID', () => {
@@ -46,5 +57,56 @@ describe('RN06 e RN07 - login', () => {
   });
   it('conta nova com declaração é criada', () => {
     expect(decidirLogin({ existe: false, banido: false, declarouMaioridade: true })).toBe('criar');
+  });
+});
+
+describe('RF03 - checklist do perfil', () => {
+  const completo = {
+    riotId: 'Marina#BR1',
+    elo: 'ouro',
+    funcaoPrimaria: 'controlador',
+    funcaoSecundaria: 'sentinela',
+    turnos: ['noite'],
+    estilo: 'competitivo',
+  };
+
+  it('perfil zerado começa pela etapa 1 (US02, cenário 1)', () => {
+    expect(proximaEtapa({})).toBe('jogos');
+    expect(Object.values(etapasConcluidas({}))).toEqual([false, false, false, false]);
+  });
+  it('perfil parcial vai direto para a etapa pendente (US02, cenário 2)', () => {
+    expect(proximaEtapa({ ...completo, turnos: [], estilo: null })).toBe('horarios');
+  });
+  it('nível só conta com elo e as duas funções', () => {
+    expect(etapasConcluidas({ elo: 'ouro', funcaoPrimaria: 'duelista' }).nivel).toBe(false);
+  });
+  it('perfil completo não tem próxima etapa', () => {
+    expect(proximaEtapa(completo)).toBeNull();
+  });
+});
+
+describe('RF02 - Riot ID', () => {
+  it.each(['Marina#BR1', 'Luna Vela#12345', 'Ção#abc'])('aceita %s', (r) => expect(riotIdValido(r)).toBe(true));
+  it.each(['Marina', 'Ma#BR1', 'Marina#B1', 'Marina#BR1234', 'Marina#B-1', 'NomeMuitoGrandeDemais#BR1'])(
+    'rejeita %s',
+    (r) => expect(riotIdValido(r)).toBe(false),
+  );
+});
+
+describe('RF04 - funções', () => {
+  it('secundária igual à primária é inválida', () => {
+    expect(funcoesValidas('duelista', 'duelista')).toBe(false);
+    expect(funcoesValidas('duelista', 'sentinela')).toBe(true);
+  });
+});
+
+describe('RN05 - gênero opcional com consentimento', () => {
+  it('sem gênero, o consentimento é descartado', () => {
+    expect(generoParaSalvar(null, true)).toEqual({ genero: null, visivel: false });
+    expect(generoParaSalvar('nao_informar', true)).toEqual({ genero: null, visivel: false });
+  });
+  it('gênero declarado respeita a escolha de exibição', () => {
+    expect(generoParaSalvar('mulher', true)).toEqual({ genero: 'mulher', visivel: true });
+    expect(generoParaSalvar('mulher', false)).toEqual({ genero: 'mulher', visivel: false });
   });
 });

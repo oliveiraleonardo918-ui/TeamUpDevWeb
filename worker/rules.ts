@@ -37,3 +37,51 @@ export function decidirLogin(p: { existe: boolean; banido: boolean; declarouMaio
   if (p.existe) return p.banido ? 'suspenso' : 'entrar';
   return p.declarouMaioridade ? 'criar' : 'maioridade_pendente';
 }
+
+/** RF02: as 4 etapas do perfil gamer, na ordem do onboarding. */
+export const ETAPAS = ['jogos', 'nivel', 'horarios', 'estilo'] as const;
+export type Etapa = (typeof ETAPAS)[number];
+
+export interface PerfilEtapas {
+  riotId?: string | null;
+  elo?: string | null;
+  funcaoPrimaria?: string | null;
+  funcaoSecundaria?: string | null;
+  turnos?: string[] | null;
+  estilo?: string | null;
+}
+
+/** RF03: quais etapas do checklist estão concluídas. */
+export function etapasConcluidas(p: PerfilEtapas): Record<Etapa, boolean> {
+  return {
+    jogos: Boolean(p.riotId?.trim()),
+    nivel: Boolean(p.elo && p.funcaoPrimaria && p.funcaoSecundaria),
+    horarios: (p.turnos?.length ?? 0) > 0,
+    estilo: Boolean(p.estilo),
+  };
+}
+
+/** RF03 / US02 cenário 2: "Completar Perfil" leva à primeira etapa pendente (null = tudo pronto). */
+export function proximaEtapa(p: PerfilEtapas): Etapa | null {
+  const feitas = etapasConcluidas(p);
+  return ETAPAS.find((e) => !feitas[e]) ?? null;
+}
+
+/** Riot ID no formato Nome#TAG: nome de 3 a 16 caracteres, tag de 3 a 5 letras ou números. */
+export function riotIdValido(riotId: string): boolean {
+  return /^[^#]{3,16}#[A-Za-z0-9]{3,5}$/u.test(riotId.trim());
+}
+
+/** RF04: a função secundária precisa ser diferente da primária. */
+export function funcoesValidas(primaria: Role, secundaria: Role): boolean {
+  return primaria !== secundaria;
+}
+
+/** RN05: sem gênero declarado não há o que exibir, então o consentimento é descartado. */
+export function generoParaSalvar(
+  genero: string | null,
+  visivel: boolean,
+): { genero: string | null; visivel: boolean } {
+  if (!genero || genero === 'nao_informar') return { genero: null, visivel: false };
+  return { genero, visivel };
+}
