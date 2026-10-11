@@ -25,6 +25,11 @@ export function Privacidade() {
           declarou ter 18 anos ou mais.
         </li>
         <li>
+          <strong>Suporte:</strong> o e-mail e a mensagem que você envia pelo formulário de suporte, para podermos
+          responder. A mensagem é enviada ao nosso e-mail pelo serviço Resend. Para evitar spam, guardamos uma versão
+          embaralhada (hash) do seu endereço de rede, nunca o endereço em si.
+        </li>
+        <li>
           <strong>Sessão:</strong> um cookie de login (HttpOnly) para manter você conectado por até 30 dias. Não usamos
           cookies de publicidade nem rastreadores.
         </li>

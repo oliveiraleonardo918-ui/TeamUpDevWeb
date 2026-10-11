@@ -13,6 +13,7 @@ import { denuncias, moderacao } from './moderacao';
 import { perfil } from './perfil';
 import { CONFIRMACAO_EXCLUSAO, dadosAnonimizados, rotaPublica } from './rules';
 import { encerrarSessao, exigirSessao } from './sessao';
+import { suporte } from './suporte';
 import { avatarUrl, entradaInvalida } from './util';
 
 const app = new Hono<AppEnv>().basePath('/api');
@@ -31,6 +32,7 @@ app.get('/health', async (c) => {
 });
 
 app.route('/auth', auth);
+app.route('/suporte', suporte);
 
 // Dados do próprio usuário logado + selo de convites do menu (uma requisição por página)
 app.get('/me', async (c) => {

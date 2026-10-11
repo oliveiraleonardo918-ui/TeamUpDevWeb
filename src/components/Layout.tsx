@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { buscarMe, type Me } from '../lib/api';
-import { EMAIL_SUPORTE } from '../lib/config';
+import { ModalSuporte } from './ModalSuporte';
 import { NavegacaoInferior, NavegacaoTopo } from './Navegacao';
 
 /**
@@ -25,6 +25,7 @@ export function Layout({
   children: ReactNode;
 }) {
   const [eu, setEu] = useState<Me | null>(null);
+  const [suporte, setSuporte] = useState(false);
 
   // Papel (item Moderação) e selo de convites do menu; falhar aqui não deve atrapalhar a página
   useEffect(() => {
@@ -57,9 +58,9 @@ export function Layout({
       <footer className="flex flex-col items-center gap-2 px-6 pb-6 text-center text-xs text-texto-suave">
         {!navegacao && <p>TeamUp · Jogue junto. Jogue com respeito.</p>}
         <nav aria-label="Rodapé" className="flex flex-wrap justify-center gap-x-4 gap-y-1">
-          <a href={`mailto:${EMAIL_SUPORTE}`} className={linkRodape} title={EMAIL_SUPORTE}>
+          <button type="button" onClick={() => setSuporte(true)} className={linkRodape}>
             Suporte
-          </a>
+          </button>
           <Link to="/termos" className={linkRodape}>
             Termos de uso
           </Link>
@@ -69,6 +70,7 @@ export function Layout({
         </nav>
       </footer>
 
+      <ModalSuporte aberto={suporte} onFechar={() => setSuporte(false)} />
       {navegacao && <NavegacaoInferior eu={eu} ativoForcado={menuAtivo} />}
     </div>
   );

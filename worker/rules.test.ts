@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   compatibilidade,
+  MAX_SUPORTE_POR_HORA_IP,
+  podeEnviarSuporte,
   dadosAnonimizados,
   MAX_DENUNCIAS_POR_DIA,
   podeBanir,
@@ -52,10 +54,10 @@ describe('RF10 - nota da avaliação', () => {
 });
 
 describe('RNF04 - rotas públicas', () => {
-  it.each(['/api/health', '/api/auth/discord', '/api/auth/callback', '/api/auth/logout'])('%s é pública', (p) =>
+  it.each(['/api/health', '/api/suporte', '/api/auth/discord', '/api/auth/callback', '/api/auth/logout'])('%s é pública', (p) =>
     expect(rotaPublica(p)).toBe(true),
   );
-  it.each(['/api/me', '/api/healthz', '/api/auth', '/api/authx/discord', '/api/perfis'])('%s exige sessão', (p) =>
+  it.each(['/api/me', '/api/healthz', '/api/auth', '/api/authx/discord', '/api/perfis', '/api/suporte/x'])('%s exige sessão', (p) =>
     expect(rotaPublica(p)).toBe(false),
   );
 });
@@ -260,4 +262,11 @@ describe('RNF09 - excluir conta', () => {
   });
   it('mantém o discord_id único (derivado do id interno)', () =>
     expect(dadosAnonimizados(id).discordId).not.toBe(dadosAnonimizados('outro').discordId));
+});
+
+describe('Formulário de suporte', () => {
+  it('libera os primeiros envios', () => expect(podeEnviarSuporte({ doIpNaUltimaHora: 0, totalHoje: 0 })).toBeNull());
+  it('limita por IP', () =>
+    expect(podeEnviarSuporte({ doIpNaUltimaHora: MAX_SUPORTE_POR_HORA_IP, totalHoje: 5 })).toBe('limite_ip'));
+  it('tem teto diário', () => expect(podeEnviarSuporte({ doIpNaUltimaHora: 0, totalHoje: 100 })).toBe('limite_diario'));
 });

@@ -11,7 +11,10 @@ export interface Usuario {
   papel: Papel;
 }
 
+/** Secrets opcionais (nem todo ambiente tem): RESEND_API_KEY envia o e-mail do formulário de suporte. */
+export type Bindings = Env & { RESEND_API_KEY?: string };
+
 export type AppEnv = {
-  Bindings: Env;
+  Bindings: Bindings;
   Variables: { usuario: Usuario };
 };

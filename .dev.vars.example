@@ -2,3 +2,7 @@
 # Em staging/produção o secret vai por:
 #   npx wrangler secret put DISCORD_CLIENT_SECRET --env staging
 DISCORD_CLIENT_SECRET=
+
+# Opcional: chave do Resend para o formulário de suporte enviar e-mail (sem ela, a mensagem só é guardada no D1)
+#   npx wrangler secret put RESEND_API_KEY --env staging
+RESEND_API_KEY=
