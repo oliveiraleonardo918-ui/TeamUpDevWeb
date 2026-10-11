@@ -45,8 +45,8 @@ export function Privacidade() {
       <h2>Quem vê o quê</h2>
       <ul>
         <li>
-          <strong>Qualquer jogador logado:</strong> nome, elo, funções, horários, estilo, bio, reputação e comentários
-          recebidos. Gênero, só se você autorizou.
+          <strong>Qualquer jogador logado:</strong> nome, foto de perfil do Discord, elo, funções, horários, estilo,
+          bio, reputação e comentários recebidos. Gênero, só se você autorizou.
         </li>
         <li>
           <strong>Só quem deu match com você:</strong> Riot ID e usuário do Discord.

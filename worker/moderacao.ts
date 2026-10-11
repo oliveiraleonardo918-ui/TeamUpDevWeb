@@ -14,7 +14,7 @@ import {
   podeDesbanir,
   podeModerar,
 } from './rules';
-import { entradaInvalida, naoEncontrado } from './util';
+import { avatarUrl, entradaInvalida, naoEncontrado } from './util';
 
 const idParam = z.object({ id: z.string().uuid() });
 
@@ -83,6 +83,7 @@ interface LinhaDenuncia {
   alvo_id: string;
   alvo_nome: string;
   alvo_discord_id: string;
+  alvo_avatar: string | null;
   alvo_papel: string;
 }
 
@@ -103,7 +104,8 @@ moderacao.get('/', async (c) => {
       .prepare(
         `SELECT r.id, r.motivo, r.descricao, r.criado_em,
                 a.id AS autor_id, a.nome AS autor_nome,
-                d.id AS alvo_id, d.nome AS alvo_nome, d.discord_id AS alvo_discord_id, d.papel AS alvo_papel
+                d.id AS alvo_id, d.nome AS alvo_nome, d.discord_id AS alvo_discord_id, d.avatar AS alvo_avatar,
+                d.papel AS alvo_papel
            FROM reports r
            JOIN users a ON a.id = r.autor_id
            JOIN users d ON d.id = r.denunciado_id
@@ -114,12 +116,19 @@ moderacao.get('/', async (c) => {
       .all<LinhaDenuncia>(),
     db
       .prepare(
-        `SELECT u.id, u.nome, u.discord_username,
+        `SELECT u.id, u.nome, u.discord_username, u.discord_id, u.avatar,
                 (SELECT l.motivo FROM moderacao_log l
                   WHERE l.alvo_id = u.id AND l.acao = 'banir' ORDER BY l.criado_em DESC LIMIT 1) AS motivo
            FROM users u WHERE u.banido = 1 ORDER BY u.nome LIMIT 100`,
       )
-      .all<{ id: string; nome: string; discord_username: string; motivo: string | null }>(),
+      .all<{
+        id: string;
+        nome: string;
+        discord_username: string;
+        discord_id: string;
+        avatar: string | null;
+        motivo: string | null;
+      }>(),
   ]);
 
   return c.json({
@@ -134,12 +143,18 @@ moderacao.get('/', async (c) => {
       descricao: d.descricao,
       data: d.criado_em,
       denunciante: { id: d.autor_id, nome: d.autor_nome },
-      denunciado: { id: d.alvo_id, nome: d.alvo_nome, papel: papelEfetivo(d.alvo_discord_id, d.alvo_papel, admins) },
+      denunciado: {
+        id: d.alvo_id,
+        nome: d.alvo_nome,
+        avatarUrl: avatarUrl(d.alvo_discord_id, d.alvo_avatar),
+        papel: papelEfetivo(d.alvo_discord_id, d.alvo_papel, admins),
+      },
     })),
     banidos: banidos.results.map((b) => ({
       id: b.id,
       nome: b.nome,
       discordUsername: b.discord_username,
+      avatarUrl: avatarUrl(b.discord_id, b.avatar),
       motivo: b.motivo,
     })),
   });

@@ -4,7 +4,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import type { AppEnv } from './env';
 import { ELOS, etapasConcluidas, funcoesValidas, generoParaSalvar, perfilCompleto, proximaEtapa, riotIdValido } from './rules';
-import { entradaInvalida } from './util';
+import { avatarUrl, entradaInvalida } from './util';
 
 const FUNCOES = ['duelista', 'iniciador', 'controlador', 'sentinela'] as const;
 const TURNOS = ['manha', 'tarde', 'noite', 'madrugada'] as const;
@@ -86,7 +86,9 @@ perfil.get('/', async (c) => {
   };
 
   return c.json({
+    id: u.id,
     nome: u.nome,
+    avatarUrl: avatarUrl(u.discordId, u.avatar),
     perfil: dados,
     etapas: etapasConcluidas(dados),
     proximaEtapa: proximaEtapa(dados),

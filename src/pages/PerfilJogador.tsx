@@ -126,7 +126,7 @@ function Conteudo({ p }: { p: PerfilPublico }) {
     <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-start">
       <div className="flex flex-col gap-6 lg:w-92 lg:shrink-0">
         <Cartao className="flex flex-col gap-5">
-          <Avatar nome={p.nome} semente={p.id} tamanho="grande" />
+          <Avatar nome={p.nome} semente={p.id} foto={p.avatarUrl} tamanho="grande" />
           <div className="flex items-center gap-3">
             <h2 className="min-w-0 flex-1 truncate text-3xl font-bold">{p.nome}</h2>
             {p.elo && <Indicador tom="neutro">{rotulo(ELOS, p.elo)}</Indicador>}
@@ -226,7 +226,13 @@ function Conteudo({ p }: { p: PerfilPublico }) {
               <li key={`${a.autorId}-${a.data}`}>
                 <Cartao className="flex flex-col gap-4">
                   <div className="flex items-center gap-3">
-                    <Avatar nome={a.autorNome} semente={a.autorId} tamanho="comentario" />
+                    <Avatar
+                      nome={a.autorNome}
+                      semente={a.autorId}
+                      foto={a.autorAvatarUrl}
+                      para={`/jogadores/${a.autorId}`}
+                      tamanho="comentario"
+                    />
                     <div>
                       <p className="font-bold">{a.autorNome}</p>
                       <p className="text-xs text-texto-suave">{formatarData(a.data)}</p>

@@ -121,7 +121,7 @@ export function Equipe() {
 function Membro({ m, detalhe }: { m: MembroEquipe; detalhe?: string }) {
   return (
     <>
-      <Avatar nome={m.nome} semente={m.id} tamanho="comentario" />
+      <Avatar nome={m.nome} semente={m.id} foto={m.avatarUrl} para={`/jogadores/${m.id}`} tamanho="comentario" />
       <div className="min-w-0 flex-1">
         <p className="truncate font-bold">{m.nome}</p>
         <p className="truncate text-xs text-texto-suave">

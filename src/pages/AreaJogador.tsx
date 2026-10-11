@@ -109,7 +109,13 @@ export function AreaJogador() {
       <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-start">
         <Cartao className="flex flex-col gap-6 lg:w-92 lg:shrink-0">
           <div className="flex items-center gap-3">
-            <Avatar nome={dados.nome} tamanho="perfil" />
+            <Avatar
+              nome={dados.nome}
+              semente={dados.id}
+              foto={dados.avatarUrl}
+              para={dados.etapas.jogos ? `/jogadores/${dados.id}` : undefined}
+              tamanho="perfil"
+            />
             <div className="min-w-0 flex-1">
               <p className="truncate text-nome font-bold">{dados.nome}</p>
               <p className="text-sm text-texto-suave">Conta do Discord conectada</p>

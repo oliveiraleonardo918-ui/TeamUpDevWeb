@@ -12,7 +12,7 @@ export function CardJogador({ jogador: j }: { jogador: Dados }) {
   return (
     <Cartao className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <Avatar nome={j.nome} semente={j.id} tamanho="card" />
+        <Avatar nome={j.nome} semente={j.id} foto={j.avatarUrl} para={`/jogadores/${j.id}`} tamanho="card" />
         <h3 className="min-w-0 flex-1 truncate text-card font-bold">{j.nome}</h3>
         {j.elo && <Indicador tom="neutro">{rotulo(ELOS, j.elo)}</Indicador>}
       </div>

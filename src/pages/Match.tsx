@@ -60,14 +60,14 @@ function Conteudo({ m }: { m: DetalheMatch }) {
         </p>
         <div className="flex items-center gap-4">
           <figure className="flex flex-col items-center gap-2">
-            <Avatar nome={m.eu.nome} semente={m.eu.id} />
+            <Avatar nome={m.eu.nome} semente={m.eu.id} foto={m.eu.avatarUrl} para={`/jogadores/${m.eu.id}`} />
             <figcaption className="text-sm font-bold">{m.eu.nome}</figcaption>
           </figure>
           <span className="mb-7 flex size-9 items-center justify-center rounded-full bg-roxo-fundo">
             <Icone src={iconeLink} tamanho={18} />
           </span>
           <figure className="flex flex-col items-center gap-2">
-            <Avatar nome={p.nome} semente={p.id} />
+            <Avatar nome={p.nome} semente={p.id} foto={p.avatarUrl} para={`/jogadores/${p.id}`} />
             <figcaption className="text-sm font-bold">{p.nome}</figcaption>
           </figure>
         </div>

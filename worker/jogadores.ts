@@ -5,7 +5,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import type { AppEnv } from './env';
 import { compatibilidade, ELOS, faixaElo, notaPublica, perfilCompleto } from './rules';
-import { conviteEntre, entradaInvalida, lerTurnos, naoEncontrado } from './util';
+import { avatarUrl, conviteEntre, entradaInvalida, lerTurnos, naoEncontrado } from './util';
 
 const LIMITE_BUSCA = 100;
 const LIMITE_AVALIACOES = 20;
@@ -30,6 +30,8 @@ interface LinhaMeuPerfil {
 interface LinhaCard {
   id: string;
   nome: string;
+  discord_id: string;
+  avatar: string | null;
   elo: string | null;
   funcao_primaria: string | null;
   funcao_secundaria: string | null;
@@ -65,7 +67,7 @@ jogadores.get('/', zValidator('query', filtrosSchema, entradaInvalida), async (c
   const minhaFuncao = f.complementar ? meusDados.funcaoPrimaria : null;
 
   const { results } = await c.env.DB.prepare(
-    `SELECT u.id, u.nome, p.elo, p.funcao_primaria, p.funcao_secundaria, p.turnos, p.estilo,
+    `SELECT u.id, u.nome, u.discord_id, u.avatar, p.elo, p.funcao_primaria, p.funcao_secundaria, p.turnos, p.estilo,
             r.media, COALESCE(r.total, 0) AS total
        FROM profiles p
        JOIN users u ON u.id = p.user_id
@@ -92,6 +94,7 @@ jogadores.get('/', zValidator('query', filtrosSchema, entradaInvalida), async (c
       const card = {
         id: l.id,
         nome: l.nome,
+        avatarUrl: avatarUrl(l.discord_id, l.avatar),
         elo: l.elo,
         funcaoPrimaria: l.funcao_primaria,
         funcaoSecundaria: l.funcao_secundaria,
@@ -111,6 +114,8 @@ jogadores.get('/', zValidator('query', filtrosSchema, entradaInvalida), async (c
 interface LinhaPublica {
   id: string;
   nome: string;
+  discord_id: string;
+  avatar: string | null;
   elo: string | null;
   funcao_primaria: string | null;
   funcao_secundaria: string | null;
@@ -127,6 +132,8 @@ interface LinhaAvaliacao {
   criado_em: string;
   autor_id: string;
   autor_nome: string;
+  autor_discord_id: string;
+  autor_avatar: string | null;
 }
 
 jogadores.get(
@@ -138,8 +145,8 @@ jogadores.get(
 
     const linha = await db
       .prepare(
-        `SELECT u.id, u.nome, p.elo, p.funcao_primaria, p.funcao_secundaria, p.turnos, p.estilo,
-                p.bio, p.genero, p.genero_visivel
+        `SELECT u.id, u.nome, u.discord_id, u.avatar, p.elo, p.funcao_primaria, p.funcao_secundaria, p.turnos,
+                p.estilo, p.bio, p.genero, p.genero_visivel
            FROM users u JOIN profiles p ON p.user_id = u.id
           WHERE u.id = ? AND u.banido = 0 AND p.riot_id IS NOT NULL AND p.riot_id <> ''`,
       )
@@ -154,7 +161,8 @@ jogadores.get(
         .all<{ nota: number; total: number }>(),
       db
         .prepare(
-          `SELECT r.nota, r.comentario, r.criado_em, a.id AS autor_id, a.nome AS autor_nome
+          `SELECT r.nota, r.comentario, r.criado_em, a.id AS autor_id, a.nome AS autor_nome,
+                  a.discord_id AS autor_discord_id, a.avatar AS autor_avatar
              FROM ratings r JOIN users a ON a.id = r.autor_id
             WHERE r.avaliado_id = ? AND r.comentario IS NOT NULL AND r.comentario <> '' AND a.banido = 0
             ORDER BY r.criado_em DESC
@@ -180,6 +188,7 @@ jogadores.get(
 
     return c.json({
       id: linha.id,
+      avatarUrl: avatarUrl(linha.discord_id, linha.avatar),
       // Situação entre quem vê e o jogador: define o botão "Convidar" (RF07)
       relacao: linha.id === c.var.usuario.id ? 'proprio' : relacao,
       matchId: convite?.status === 'aceito' ? convite.id : null,
@@ -201,6 +210,7 @@ jogadores.get(
       avaliacoes: comentarios.results.map((a) => ({
         autorId: a.autor_id,
         autorNome: a.autor_nome,
+        autorAvatarUrl: avatarUrl(a.autor_discord_id, a.autor_avatar),
         data: a.criado_em,
         nota: nota === null ? null : a.nota,
         comentario: a.comentario,

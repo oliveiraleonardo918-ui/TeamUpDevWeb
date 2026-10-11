@@ -59,7 +59,13 @@ export function Avaliar() {
         <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-start">
           <Cartao className="flex min-w-0 flex-1 flex-col gap-6">
             <div className="flex items-center gap-3">
-              <Avatar nome={dados.parceiro.nome} semente={dados.parceiro.id} tamanho="comentario" />
+              <Avatar
+                nome={dados.parceiro.nome}
+                semente={dados.parceiro.id}
+                foto={dados.parceiro.avatarUrl}
+                para={`/jogadores/${dados.parceiro.id}`}
+                tamanho="comentario"
+              />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-subtitulo font-bold">{dados.parceiro.nome}</p>
                 <p className="text-xs text-texto-suave">Match de {formatarData(dados.data)}</p>

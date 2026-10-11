@@ -108,7 +108,7 @@ export function Moderacao() {
                     key={b.id}
                     className="flex flex-wrap items-center gap-3 border-b border-borda pb-3 last:border-0 last:pb-0"
                   >
-                    <Avatar nome={b.nome} semente={b.id} tamanho="comentario" />
+                    <Avatar nome={b.nome} semente={b.id} foto={b.avatarUrl} tamanho="comentario" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-bold">{b.nome}</p>
                       <p className="truncate text-xs text-texto-suave">
@@ -303,7 +303,7 @@ function ConfirmarAcao({ acao, onFechar, onFeito }: { acao: Acao; onFechar: () =
       {acao && pessoa && (
         <form onSubmit={confirmar} className="flex flex-col gap-5">
           <div className="flex items-center gap-3">
-            <Avatar nome={pessoa.nome} semente={pessoa.id} tamanho="comentario" />
+            <Avatar nome={pessoa.nome} semente={pessoa.id} foto={pessoa.avatarUrl} tamanho="comentario" />
             <div>
               <p className="font-bold">{pessoa.nome}</p>
               {acao.tipo === 'banir' && (

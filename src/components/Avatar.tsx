@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { Link } from 'react-router';
+
 const cores = {
   verde: 'bg-avatar-verde',
   roxo: 'bg-avatar-roxo',
@@ -31,25 +34,58 @@ function corDe(semente: string): Cor {
   return lista[h % lista.length];
 }
 
-/** Avatar com iniciais (sem imagem externa). A cor vem de `cor` ou é derivada de `semente` (id do usuário). */
+/**
+ * Avatar: foto do Discord quando houver (CSP libera cdn.discordapp.com); senão, ou se a imagem falhar, as iniciais.
+ * A cor das iniciais vem de `cor` ou é derivada de `semente` (id do usuário).
+ * `para`: vira link (normalmente para o perfil público da pessoa).
+ */
 export function Avatar({
   nome,
   semente,
   cor,
+  foto,
+  para,
   tamanho = 'md',
 }: {
   nome: string;
   semente?: string;
   cor?: Cor;
+  foto?: string | null;
+  para?: string;
   tamanho?: keyof typeof tamanhos;
 }) {
+  const [falhou, setFalhou] = useState(false);
   const c = cor ?? (semente ? corDe(semente) : 'verde');
+  const base = `flex shrink-0 items-center justify-center overflow-hidden rounded-full font-bold ${tamanhos[tamanho]}`;
+
+  const conteudo =
+    foto && !falhou ? (
+      <img
+        src={foto}
+        alt=""
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        onError={() => setFalhou(true)}
+        className="size-full object-cover"
+      />
+    ) : (
+      iniciais(nome)
+    );
+
+  if (para) {
+    return (
+      <Link
+        to={para}
+        aria-label={`Ver perfil de ${nome}`}
+        className={`${base} ${cores[c]} transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque`}
+      >
+        {conteudo}
+      </Link>
+    );
+  }
   return (
-    <span
-      aria-hidden="true"
-      className={`flex shrink-0 items-center justify-center rounded-full font-bold ${cores[c]} ${tamanhos[tamanho]}`}
-    >
-      {iniciais(nome)}
+    <span aria-hidden="true" className={`${base} ${cores[c]}`}>
+      {conteudo}
     </span>
   );
 }

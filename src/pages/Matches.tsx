@@ -64,7 +64,13 @@ export function Matches() {
                   <li key={m.id}>
                     <Cartao className="flex flex-col gap-4">
                       <div className="flex items-center gap-4">
-                        <Avatar nome={m.jogador.nome} semente={m.jogador.id} tamanho="comentario" />
+                        <Avatar
+                          nome={m.jogador.nome}
+                          semente={m.jogador.id}
+                          foto={m.jogador.avatarUrl}
+                          para={`/jogadores/${m.jogador.id}`}
+                          tamanho="comentario"
+                        />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-card font-bold">{m.jogador.nome}</p>
                           <p className="text-sm text-texto-suave">
