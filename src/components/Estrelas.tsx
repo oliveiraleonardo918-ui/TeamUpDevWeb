@@ -1,4 +1,4 @@
-/** Nota de 0 a 5 em estrelas (★ cheias em amarelo, ☆ vazias em cinza). */
+/** Nota de 1 a 5 em estrelas (★ cheias em amarelo, ☆ vazias em cinza). */
 export function Estrelas({ nota, tamanho = 'text-lg' }: { nota: number; tamanho?: string }) {
   const cheias = Math.round(nota);
   return (
