@@ -10,14 +10,19 @@ const variantes = {
 
 export function Botao({
   variante = 'primario',
+  cheio = true,
   className = '',
   type = 'button',
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variante?: keyof typeof variantes }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variante?: keyof typeof variantes;
+  /** false: largura do conteúdo em vez de ocupar a linha toda */
+  cheio?: boolean;
+}) {
   return (
     <button
       type={type}
-      className={`flex h-12 w-full items-center justify-center gap-2 rounded-lg px-4 text-base font-bold outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${variantes[variante]} ${className}`}
+      className={`flex h-12 ${cheio ? 'w-full' : 'w-auto'} items-center justify-center gap-2 rounded-lg px-4 text-base font-bold outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${variantes[variante]} ${className}`}
       {...props}
     />
   );

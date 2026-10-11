@@ -20,6 +20,10 @@
   --color-perigo-fundo: #361d28;
   --color-avatar-verde: #2b514d;
   --color-avatar-roxo: #544166;
+  --color-avatar-azul: #344565;
+  --color-avatar-marrom: #654737;
+  --color-avatar-cinza: #434b60;
+  --color-estrela: #f6cc76;
 
   /* Escala tipográfica do protótipo (substitui a padrão do Tailwind) */
   --text-2xs: 11px;
@@ -36,6 +40,8 @@
   --text-lg--line-height: 1.45;
   --text-xl: 19px;
   --text-xl--line-height: 1.45;
+  --text-card: 17px;
+  --text-card--line-height: 1.45;
   --text-subtitulo: 18px;
   --text-subtitulo--line-height: 1.45;
   --text-nome: 22px;
@@ -52,6 +58,8 @@
   --text-3xl--line-height: 1.45;
   --text-4xl: 38px;
   --text-4xl--line-height: 1.07;
+  --text-nota: 48px;
+  --text-nota--line-height: 1.2;
   --text-5xl: 56px;
   --text-5xl--line-height: 1.07;
 
