@@ -7,6 +7,7 @@ import { Botao } from '../components/Botao';
 import { Cartao } from '../components/Cartao';
 import { Icone } from '../components/Icone';
 import { Indicador } from '../components/Indicador';
+import { ErroConexao } from '../components/ErroConexao';
 import { Layout } from '../components/Layout';
 import { buscarMatch, type DetalheMatch } from '../lib/convites';
 import { formatarData } from '../lib/datas';
@@ -32,10 +33,7 @@ export function Match() {
           </>
         ) : erro ? (
           <>
-            <Aviso titulo="Não foi possível carregar o match.">Verifique sua conexão e tente de novo.</Aviso>
-            <Botao variante="secundario" onClick={recarregar}>
-              Tentar de novo
-            </Botao>
+            <ErroConexao oQue="o match" onTentar={recarregar} />
           </>
         ) : dados ? (
           <Conteudo m={dados} />

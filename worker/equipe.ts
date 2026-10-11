@@ -81,7 +81,7 @@ equipe.get(
     const admins = listaAdmins(c.env.ADMIN_DISCORD_IDS);
     const { results } = await c.env.DB.prepare(
       `SELECT id, nome, discord_username, discord_id FROM users
-        WHERE banido = 0 AND papel = 'jogador' AND id <> ?2
+        WHERE banido = 0 AND excluido_em IS NULL AND papel = 'jogador' AND id <> ?2
           AND (nome LIKE ?1 ESCAPE '\\' OR discord_username LIKE ?1 ESCAPE '\\')
         ORDER BY nome
         LIMIT 10`,

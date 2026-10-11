@@ -1,7 +1,9 @@
+import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { csrf } from 'hono/csrf';
 import { HTTPException } from 'hono/http-exception';
 import { secureHeaders } from 'hono/secure-headers';
+import { z } from 'zod';
 import { auth } from './auth';
 import { convites, matches } from './convites';
 import type { AppEnv } from './env';
@@ -9,8 +11,9 @@ import { equipe } from './equipe';
 import { jogadores } from './jogadores';
 import { denuncias, moderacao } from './moderacao';
 import { perfil } from './perfil';
-import { rotaPublica } from './rules';
-import { exigirSessao } from './sessao';
+import { CONFIRMACAO_EXCLUSAO, dadosAnonimizados, rotaPublica } from './rules';
+import { encerrarSessao, exigirSessao } from './sessao';
+import { entradaInvalida } from './util';
 
 const app = new Hono<AppEnv>().basePath('/api');
 
@@ -47,6 +50,31 @@ app.get('/me', async (c) => {
     convitesPendentes: convites?.n ?? 0,
   });
 });
+
+// RNF09 (LGPD): excluir a própria conta. Anonimiza (ver dadosAnonimizados) e encerra a sessão.
+app.post(
+  '/me/excluir',
+  zValidator('json', z.object({ confirmacao: z.literal(CONFIRMACAO_EXCLUSAO) }), entradaInvalida),
+  async (c) => {
+    const id = c.var.usuario.id;
+    const anon = dadosAnonimizados(id);
+    const db = c.env.DB;
+    await db.batch([
+      db
+        .prepare(
+          `UPDATE users SET discord_id = ?, discord_username = ?, nome = ?, avatar = NULL, email = NULL,
+                  papel = 'jogador', excluido_em = datetime('now')
+            WHERE id = ?`,
+        )
+        .bind(anon.discordId, anon.discordUsername, anon.nome, id),
+      db.prepare('DELETE FROM profiles WHERE user_id = ?').bind(id),
+      db.prepare("DELETE FROM invites WHERE status = 'pendente' AND (de_user = ?1 OR para_user = ?1)").bind(id),
+      db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id),
+    ]);
+    await encerrarSessao(c);
+    return c.body(null, 204);
+  },
+);
 
 app.route('/perfil', perfil);
 app.route('/jogadores', jogadores);

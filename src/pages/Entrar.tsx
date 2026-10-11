@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import iconeCadeado from '../assets/icons/lock-keyhole.svg';
 import iconeEstrela from '../assets/icons/star.svg';
 import iconeFiltros from '../assets/icons/sliders-horizontal.svg';
@@ -34,6 +34,7 @@ export function Entrar() {
   const [maiorDeIdade, setMaiorDeIdade] = useState(false);
   const [params] = useSearchParams();
   const erro = mensagensErro[params.get('erro') ?? ''];
+  const contaExcluida = params.get('conta') === 'excluida';
   const navigate = useNavigate();
 
   // Quem já tem sessão vai direto para a Área do Jogador
@@ -79,6 +80,9 @@ export function Entrar() {
             ))}
           </ul>
           <hr className="border-borda" />
+          {contaExcluida && (
+            <Aviso tom="info" titulo="Sua conta foi excluída.">Obrigado por ter jogado com a gente.</Aviso>
+          )}
           {erro && <Aviso titulo={erro} />}
           <Selecao
             checked={maiorDeIdade}
@@ -95,7 +99,15 @@ export function Entrar() {
             Entrar com Discord
           </Botao>
           <p className="text-center text-xs text-texto-suave">
-            Ao entrar, você concorda com os Termos de uso e a Política de privacidade.
+            Ao entrar, você concorda com os{' '}
+            <Link to="/termos" className="text-destaque underline-offset-2 hover:underline">
+              Termos de uso
+            </Link>{' '}
+            e a{' '}
+            <Link to="/privacidade" className="text-destaque underline-offset-2 hover:underline">
+              Política de privacidade
+            </Link>
+            .
           </p>
         </Cartao>
       </div>

@@ -71,7 +71,7 @@ convites.get('/', async (c) => {
            LEFT JOIN profiles p ON p.user_id = u.id
            LEFT JOIN (SELECT avaliado_id, AVG(nota) AS media, COUNT(*) AS total
                         FROM ratings GROUP BY avaliado_id) r ON r.avaliado_id = u.id
-          WHERE i.para_user = ? AND i.status = 'pendente' AND u.banido = 0
+          WHERE i.para_user = ? AND i.status = 'pendente' AND u.banido = 0 AND u.excluido_em IS NULL
           ORDER BY i.criado_em DESC
           LIMIT ?`,
       )
@@ -87,7 +87,7 @@ convites.get('/', async (c) => {
            LEFT JOIN profiles p ON p.user_id = u.id
            LEFT JOIN (SELECT avaliado_id, AVG(nota) AS media, COUNT(*) AS total
                         FROM ratings GROUP BY avaliado_id) r ON r.avaliado_id = u.id
-          WHERE i.de_user = ? AND u.banido = 0
+          WHERE i.de_user = ? AND u.banido = 0 AND u.excluido_em IS NULL
           ORDER BY i.criado_em DESC
           LIMIT ?`,
       )
@@ -188,7 +188,7 @@ matches.get('/', async (c) => {
        JOIN users u ON u.id = CASE WHEN i.de_user = ?1 THEN i.para_user ELSE i.de_user END
        LEFT JOIN profiles p ON p.user_id = u.id
        LEFT JOIN ratings mr ON mr.invite_id = i.id AND mr.autor_id = ?1
-      WHERE i.status = 'aceito' AND (i.de_user = ?1 OR i.para_user = ?1) AND u.banido = 0
+      WHERE i.status = 'aceito' AND (i.de_user = ?1 OR i.para_user = ?1) AND u.banido = 0 AND u.excluido_em IS NULL
       ORDER BY data DESC
       LIMIT 100`,
   )
@@ -229,7 +229,8 @@ matches.get('/:id', zValidator('param', idSchema, naoEncontrado), async (c) => {
        LEFT JOIN ratings mr ON mr.invite_id = i.id AND mr.autor_id = ?2
        LEFT JOIN (SELECT avaliado_id, AVG(nota) AS media, COUNT(*) AS total
                     FROM ratings GROUP BY avaliado_id) r ON r.avaliado_id = u.id
-      WHERE i.id = ?1 AND i.status = 'aceito' AND (i.de_user = ?2 OR i.para_user = ?2) AND u.banido = 0`,
+      WHERE i.id = ?1 AND i.status = 'aceito' AND (i.de_user = ?2 OR i.para_user = ?2) AND u.banido = 0
+        AND u.excluido_em IS NULL`,
   )
     .bind(id, eu.id)
     .first<{
@@ -290,7 +291,7 @@ matches.post(
                 (SELECT 1 FROM ratings WHERE invite_id = i.id AND autor_id = ?2) AS ja_avaliou
            FROM invites i
            JOIN users u ON u.id = CASE WHEN i.de_user = ?2 THEN i.para_user ELSE i.de_user END
-          WHERE i.id = ?1 AND u.banido = 0`,
+          WHERE i.id = ?1 AND u.banido = 0 AND u.excluido_em IS NULL`,
       )
       .bind(id, eu)
       .first<{ status: string; de_user: string; para_user: string; ja_avaliou: number | null }>();

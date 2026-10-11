@@ -8,6 +8,7 @@ import { Cartao } from '../components/Cartao';
 import { Estrelas, formatarNota } from '../components/Estrelas';
 import { Icone } from '../components/Icone';
 import { Indicador } from '../components/Indicador';
+import { ErroConexao } from '../components/ErroConexao';
 import { Layout } from '../components/Layout';
 import { ModalDenuncia } from '../components/ModalDenuncia';
 import { ApiError } from '../lib/api';
@@ -56,10 +57,7 @@ export function PerfilJogador() {
         </div>
       ) : erro ? (
         <div className="flex w-full flex-col gap-4">
-          <Aviso titulo="Não foi possível carregar este perfil.">Verifique sua conexão e tente de novo.</Aviso>
-          <Botao variante="secundario" onClick={recarregar}>
-            Tentar de novo
-          </Botao>
+          <ErroConexao oQue="este perfil" onTentar={recarregar} />
         </div>
       ) : dados ? (
         <Conteudo p={dados} />

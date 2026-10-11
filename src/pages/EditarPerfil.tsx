@@ -9,6 +9,7 @@ import { BarraProgresso } from '../components/BarraProgresso';
 import { Botao } from '../components/Botao';
 import { Icone } from '../components/Icone';
 import { Interruptor } from '../components/Interruptor';
+import { ErroConexao } from '../components/ErroConexao';
 import { Layout } from '../components/Layout';
 import { Opcoes } from '../components/Opcoes';
 import {
@@ -53,10 +54,7 @@ export function EditarPerfil() {
       <div className="w-full max-w-192">
         {erro ? (
           <div className="flex flex-col gap-4">
-            <Aviso titulo="Não foi possível carregar seu perfil.">Verifique sua conexão e tente de novo.</Aviso>
-            <Botao variante="secundario" onClick={recarregar}>
-              Tentar de novo
-            </Botao>
+            <ErroConexao oQue="seu perfil" onTentar={recarregar} />
           </div>
         ) : dados ? (
           // key: ao trocar de etapa, o formulário recomeça com os dados salvos
