@@ -27,25 +27,33 @@ export function PerfilJogador() {
   const { dados, erro, recarregar } = useProtegido(buscar);
   const navigate = useNavigate();
 
+  const proprio = dados?.relacao === 'proprio';
+
   function voltar() {
-    // Volta para a busca com os mesmos filtros quando veio de lá
+    // Volta para a tela anterior (busca com os mesmos filtros, Área do Jogador...) quando veio de lá
     if (window.history.length > 1) navigate(-1);
-    else navigate('/buscar');
+    else navigate(proprio ? '/jogador' : '/buscar');
   }
 
   return (
-    <Layout navegacao>
+    <Layout navegacao menuAtivo={proprio ? '/jogador' : undefined}>
       <button
         type="button"
         onClick={voltar}
         className="self-start rounded-caixa text-destaque hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque"
       >
-        ← Voltar para Buscar
+        ← {proprio ? 'Voltar' : 'Voltar para Buscar'}
       </button>
       <header className="flex w-full flex-col gap-4.5">
-        <p className="text-xs font-bold text-destaque">PERFIL PÚBLICO</p>
-        <h1 className="text-titulo font-bold lg:text-titulo-grande">Conheça seu próximo duo</h1>
-        <p className="text-md text-texto-suave">Uma boa parceria vai além do elo.</p>
+        <p className="text-xs font-bold text-destaque">{proprio ? 'SEU PERFIL PÚBLICO' : 'PERFIL PÚBLICO'}</p>
+        <h1 className="text-titulo font-bold lg:text-titulo-grande">
+          {proprio ? 'É assim que os outros te veem' : 'Conheça seu próximo duo'}
+        </h1>
+        <p className="text-md text-texto-suave">
+          {proprio
+            ? 'Sua reputação e as avaliações que você recebeu. Riot ID e Discord continuam privados.'
+            : 'Uma boa parceria vai além do elo.'}
+        </p>
       </header>
 
       {erro === 'nao_encontrado' ? (
