@@ -1,5 +1,7 @@
 # Atualizações semanais agrupadas (um PR por ecossistema) para não lotar a fila.
 # Também mantém atualizados os SHAs fixados das GitHub Actions.
+# Versões major de TypeScript e Node ficam de fora: dependem de suporte do typescript-eslint
+# e de o Node ser LTS. Atualize essas duas à mão, junto com o node-version do CI.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -9,6 +11,9 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -20,3 +25,6 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
