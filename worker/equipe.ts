@@ -6,7 +6,7 @@ import { createMiddleware } from 'hono/factory';
 import { z } from 'zod';
 import type { AppEnv } from './env';
 import { listaAdmins, papelEfetivo, podeMudarModerador } from './rules';
-import { entradaInvalida, naoEncontrado } from './util';
+import { avatarUrl, entradaInvalida, naoEncontrado } from './util';
 
 const LIMITE_HISTORICO = 50;
 
@@ -29,14 +29,23 @@ equipe.get('/', async (c) => {
   const [admins, moderadores, historico] = await Promise.all([
     db
       .prepare(
-        `SELECT id, nome, discord_username, discord_id FROM users
+        `SELECT id, nome, discord_username, discord_id, avatar FROM users
           WHERE discord_id IN (SELECT value FROM json_each(?)) ORDER BY nome`,
       )
       .bind(JSON.stringify(idsAdmins))
-      .all<{ id: string; nome: string; discord_username: string; discord_id: string }>(),
+      .all<{ id: string; nome: string; discord_username: string; discord_id: string; avatar: string | null }>(),
     db
-      .prepare("SELECT id, nome, discord_username, banido FROM users WHERE papel = 'moderador' ORDER BY nome")
-      .all<{ id: string; nome: string; discord_username: string; banido: number }>(),
+      .prepare(
+        "SELECT id, nome, discord_username, discord_id, avatar, banido FROM users WHERE papel = 'moderador' ORDER BY nome",
+      )
+      .all<{
+        id: string;
+        nome: string;
+        discord_username: string;
+        discord_id: string;
+        avatar: string | null;
+        banido: number;
+      }>(),
     db
       .prepare(
         `SELECT l.id, l.acao, l.motivo, l.criado_em, a.nome AS autor_nome, t.nome AS alvo_nome
@@ -52,13 +61,19 @@ equipe.get('/', async (c) => {
 
   const entraram = new Set(admins.results.map((a) => a.discord_id));
   return c.json({
-    admins: admins.results.map((a) => ({ id: a.id, nome: a.nome, discordUsername: a.discord_username })),
+    admins: admins.results.map((a) => ({
+      id: a.id,
+      nome: a.nome,
+      discordUsername: a.discord_username,
+      avatarUrl: avatarUrl(a.discord_id, a.avatar),
+    })),
     // Configurados como admin, mas ainda sem login no TeamUp
     adminsSemConta: idsAdmins.filter((id) => !entraram.has(id)).length,
     moderadores: moderadores.results.map((m) => ({
       id: m.id,
       nome: m.nome,
       discordUsername: m.discord_username,
+      avatarUrl: avatarUrl(m.discord_id, m.avatar),
       banido: m.banido === 1,
     })),
     historico: historico.results.map((h) => ({
@@ -80,18 +95,23 @@ equipe.get(
     const { q } = c.req.valid('query');
     const admins = listaAdmins(c.env.ADMIN_DISCORD_IDS);
     const { results } = await c.env.DB.prepare(
-      `SELECT id, nome, discord_username, discord_id FROM users
+      `SELECT id, nome, discord_username, discord_id, avatar FROM users
         WHERE banido = 0 AND excluido_em IS NULL AND papel = 'jogador' AND id <> ?2
           AND (nome LIKE ?1 ESCAPE '\\' OR discord_username LIKE ?1 ESCAPE '\\')
         ORDER BY nome
         LIMIT 10`,
     )
       .bind(padraoLike(q), c.var.usuario.id)
-      .all<{ id: string; nome: string; discord_username: string; discord_id: string }>();
+      .all<{ id: string; nome: string; discord_username: string; discord_id: string; avatar: string | null }>();
     return c.json({
       candidatos: results
         .filter((u) => !admins.has(u.discord_id))
-        .map((u) => ({ id: u.id, nome: u.nome, discordUsername: u.discord_username })),
+        .map((u) => ({
+          id: u.id,
+          nome: u.nome,
+          discordUsername: u.discord_username,
+          avatarUrl: avatarUrl(u.discord_id, u.avatar),
+        })),
     });
   },
 );

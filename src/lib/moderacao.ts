@@ -20,13 +20,13 @@ export interface Denuncia {
   descricao: string | null;
   data: string;
   denunciante: { id: string; nome: string };
-  denunciado: { id: string; nome: string; papel: 'jogador' | 'moderador' | 'admin' };
+  denunciado: { id: string; nome: string; avatarUrl: string | null; papel: 'jogador' | 'moderador' | 'admin' };
 }
 
 export interface PainelModeracao {
   resumo: { abertas: number; arquivadasHoje: number; contasSuspensas: number };
   denuncias: Denuncia[];
-  banidos: { id: string; nome: string; discordUsername: string; motivo: string | null }[];
+  banidos: { id: string; nome: string; discordUsername: string; avatarUrl: string | null; motivo: string | null }[];
 }
 
 export const MENSAGENS_DENUNCIA: Record<string, string> = {

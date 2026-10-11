@@ -29,7 +29,9 @@ export interface Perfil {
 }
 
 export interface RespostaPerfil {
+  id: string;
   nome: string;
+  avatarUrl: string | null;
   perfil: Perfil;
   etapas: Record<Etapa, boolean>;
   proximaEtapa: Etapa | null;

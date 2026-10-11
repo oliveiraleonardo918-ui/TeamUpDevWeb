@@ -5,6 +5,8 @@ import { ELOS, ESTILOS, FUNCOES, GENEROS, TURNOS, type Elo, type Estilo, type Fu
 export interface CardJogador {
   id: string;
   nome: string;
+  /** Foto do Discord (null = iniciais) */
+  avatarUrl: string | null;
   elo: Elo | null;
   funcaoPrimaria: Funcao | null;
   funcaoSecundaria: Funcao | null;
@@ -18,6 +20,7 @@ export interface CardJogador {
 export interface AvaliacaoRecebida {
   autorId: string;
   autorNome: string;
+  autorAvatarUrl: string | null;
   data: string;
   nota: number | null;
   comentario: string;

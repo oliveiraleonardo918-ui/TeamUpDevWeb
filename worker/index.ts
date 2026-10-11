@@ -13,7 +13,7 @@ import { denuncias, moderacao } from './moderacao';
 import { perfil } from './perfil';
 import { CONFIRMACAO_EXCLUSAO, dadosAnonimizados, rotaPublica } from './rules';
 import { encerrarSessao, exigirSessao } from './sessao';
-import { entradaInvalida } from './util';
+import { avatarUrl, entradaInvalida } from './util';
 
 const app = new Hono<AppEnv>().basePath('/api');
 
@@ -45,7 +45,7 @@ app.get('/me', async (c) => {
     id: u.id,
     nome: u.nome,
     discordUsername: u.discordUsername,
-    avatarUrl: u.avatar ? `https://cdn.discordapp.com/avatars/${u.discordId}/${u.avatar}.png?size=128` : null,
+    avatarUrl: avatarUrl(u.discordId, u.avatar),
     papel: u.papel,
     convitesPendentes: convites?.n ?? 0,
   });

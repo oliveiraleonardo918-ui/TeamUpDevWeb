@@ -5,6 +5,7 @@ export interface MembroEquipe {
   id: string;
   nome: string;
   discordUsername: string;
+  avatarUrl: string | null;
 }
 
 export interface RegistroModeracao {

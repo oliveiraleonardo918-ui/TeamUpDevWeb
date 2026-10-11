@@ -14,17 +14,18 @@ export interface Convite {
 export interface ItemMatch {
   id: string;
   data: string;
-  jogador: { id: string; nome: string; elo: Elo | null; funcaoPrimaria: Funcao | null };
+  jogador: { id: string; nome: string; avatarUrl: string | null; elo: Elo | null; funcaoPrimaria: Funcao | null };
   minhaAvaliacao: { nota: number; data: string } | null;
 }
 
 export interface DetalheMatch {
   id: string;
   data: string;
-  eu: { id: string; nome: string };
+  eu: { id: string; nome: string; avatarUrl: string | null };
   parceiro: {
     id: string;
     nome: string;
+    avatarUrl: string | null;
     riotId: string | null;
     discordUsername: string;
     discordUrl: string;

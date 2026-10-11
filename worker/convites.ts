@@ -13,7 +13,7 @@ import {
   podeAvaliar,
   podeConvidar,
 } from './rules';
-import { conviteEntre, entradaInvalida, lerTurnos, naoEncontrado } from './util';
+import { avatarUrl, conviteEntre, entradaInvalida, lerTurnos, naoEncontrado } from './util';
 
 const LIMITE_LISTA = 50;
 
@@ -26,6 +26,8 @@ interface LinhaConvite {
   respondido_em: string | null;
   uid: string;
   nome: string;
+  discord_id: string;
+  avatar: string | null;
   elo: string | null;
   funcao_primaria: string | null;
   funcao_secundaria: string | null;
@@ -44,6 +46,7 @@ function paraConvite(l: LinhaConvite) {
     jogador: {
       id: l.uid,
       nome: l.nome,
+      avatarUrl: avatarUrl(l.discord_id, l.avatar),
       elo: l.elo,
       funcaoPrimaria: l.funcao_primaria,
       funcaoSecundaria: l.funcao_secundaria,
@@ -63,7 +66,7 @@ convites.get('/', async (c) => {
   const [recebidos, enviados] = await Promise.all([
     db
       .prepare(
-        `SELECT i.id, i.status, i.criado_em, i.respondido_em, u.id AS uid, u.nome,
+        `SELECT i.id, i.status, i.criado_em, i.respondido_em, u.id AS uid, u.nome, u.discord_id, u.avatar,
                 p.elo, p.funcao_primaria, p.funcao_secundaria, p.turnos, p.estilo,
                 r.media, COALESCE(r.total, 0) AS total
            FROM invites i
@@ -79,7 +82,7 @@ convites.get('/', async (c) => {
       .all<LinhaConvite>(),
     db
       .prepare(
-        `SELECT i.id, i.status, i.criado_em, i.respondido_em, u.id AS uid, u.nome,
+        `SELECT i.id, i.status, i.criado_em, i.respondido_em, u.id AS uid, u.nome, u.discord_id, u.avatar,
                 p.elo, p.funcao_primaria, p.funcao_secundaria, p.turnos, p.estilo,
                 r.media, COALESCE(r.total, 0) AS total
            FROM invites i
@@ -182,7 +185,7 @@ export const matches = new Hono<AppEnv>();
 matches.get('/', async (c) => {
   const { results } = await c.env.DB.prepare(
     `SELECT i.id, COALESCE(i.respondido_em, i.criado_em) AS data,
-            u.id AS uid, u.nome, p.elo, p.funcao_primaria,
+            u.id AS uid, u.nome, u.discord_id, u.avatar, p.elo, p.funcao_primaria,
             mr.nota AS minha_nota, mr.criado_em AS avaliado_em
        FROM invites i
        JOIN users u ON u.id = CASE WHEN i.de_user = ?1 THEN i.para_user ELSE i.de_user END
@@ -198,6 +201,8 @@ matches.get('/', async (c) => {
       data: string;
       uid: string;
       nome: string;
+      discord_id: string;
+      avatar: string | null;
       elo: string | null;
       funcao_primaria: string | null;
       minha_nota: number | null;
@@ -208,7 +213,13 @@ matches.get('/', async (c) => {
     matches: results.map((m) => ({
       id: m.id,
       data: m.data,
-      jogador: { id: m.uid, nome: m.nome, elo: m.elo, funcaoPrimaria: m.funcao_primaria },
+      jogador: {
+        id: m.uid,
+        nome: m.nome,
+        avatarUrl: avatarUrl(m.discord_id, m.avatar),
+        elo: m.elo,
+        funcaoPrimaria: m.funcao_primaria,
+      },
       minhaAvaliacao: m.minha_nota === null ? null : { nota: m.minha_nota, data: m.avaliado_em },
     })),
   });
@@ -220,7 +231,7 @@ matches.get('/:id', zValidator('param', idSchema, naoEncontrado), async (c) => {
   const { id } = c.req.valid('param');
   const linha = await c.env.DB.prepare(
     `SELECT i.id, COALESCE(i.respondido_em, i.criado_em) AS data,
-            u.id AS uid, u.nome, u.discord_username, u.discord_id, p.riot_id,
+            u.id AS uid, u.nome, u.discord_username, u.discord_id, u.avatar, p.riot_id,
             mr.nota AS minha_nota, mr.comentario AS meu_comentario, mr.criado_em AS avaliado_em,
             r.media, COALESCE(r.total, 0) AS total
        FROM invites i
@@ -240,6 +251,7 @@ matches.get('/:id', zValidator('param', idSchema, naoEncontrado), async (c) => {
       nome: string;
       discord_username: string;
       discord_id: string;
+      avatar: string | null;
       riot_id: string | null;
       minha_nota: number | null;
       meu_comentario: string | null;
@@ -252,10 +264,11 @@ matches.get('/:id', zValidator('param', idSchema, naoEncontrado), async (c) => {
   return c.json({
     id: linha.id,
     data: linha.data,
-    eu: { id: eu.id, nome: eu.nome },
+    eu: { id: eu.id, nome: eu.nome, avatarUrl: avatarUrl(eu.discordId, eu.avatar) },
     parceiro: {
       id: linha.uid,
       nome: linha.nome,
+      avatarUrl: avatarUrl(linha.discord_id, linha.avatar),
       riotId: linha.riot_id,
       discordUsername: linha.discord_username,
       // discord_id só tem dígitos (validado no login)

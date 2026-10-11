@@ -101,7 +101,7 @@ function Cabecalho({ j }: { j: CardJogador }) {
   return (
     <>
       <div className="flex items-center gap-3">
-        <Avatar nome={j.nome} semente={j.id} tamanho="comentario" />
+        <Avatar nome={j.nome} semente={j.id} foto={j.avatarUrl} para={`/jogadores/${j.id}`} tamanho="comentario" />
         <Link
           to={`/jogadores/${j.id}`}
           className="min-w-0 truncate rounded-caixa text-card font-bold hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque"
