@@ -31,7 +31,7 @@
         {
           "binding": "DB",
           "database_name": "teamup-staging",
-          "database_id": "TROCAR-PELO-ID-DO-D1-STAGING",
+          "database_id": "0ccb1d14-0835-4b04-baa0-7448ea7c1362",
           "migrations_dir": "migrations"
         }
       ]
@@ -49,7 +49,7 @@
         {
           "binding": "DB",
           "database_name": "teamup-production",
-          "database_id": "TROCAR-PELO-ID-DO-D1-PRODUCAO",
+          "database_id": "efb1c3e6-bf0c-4fef-8a3f-ab084783c295",
           "migrations_dir": "migrations"
         }
       ]
