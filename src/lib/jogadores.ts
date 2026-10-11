@@ -33,7 +33,7 @@ export interface PerfilPublico extends Omit<CardJogador, 'nota' | 'avaliacoes'> 
   reputacao: {
     nota: number | null;
     total: number;
-    /** Quantidade de avaliações por nota (índice 0 a 5); null antes de 3 avaliações */
+    /** Quantidade de avaliações por nota (índice = nota, de 1 a 5; o índice 0 fica sempre zerado); null antes de 3 avaliações */
     distribuicao: number[] | null;
   };
   avaliacoes: AvaliacaoRecebida[];

@@ -168,7 +168,7 @@ function Conteudo({ p }: { p: PerfilPublico }) {
                 <p className="text-sm text-texto-suave">{r.total} avaliações</p>
               </div>
               <ul className="flex flex-1 flex-col gap-3" aria-label="Distribuição das notas">
-                {[5, 4, 3, 2, 1, 0].map((n) => {
+                {[5, 4, 3, 2, 1].map((n) => {
                   const qtd = r.distribuicao![n];
                   return (
                     <li key={n} className="flex items-center gap-2.5 text-xs">

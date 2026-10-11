@@ -38,8 +38,8 @@ describe('RN03 - função complementar', () => {
 });
 
 describe('RF10 - nota da avaliação', () => {
-  it.each([0, 3, 5])('aceita %i', (n) => expect(notaValida(n)).toBe(true));
-  it.each([-1, 6, 4.5])('rejeita %s', (n) => expect(notaValida(n)).toBe(false));
+  it.each([1, 3, 5])('aceita %i', (n) => expect(notaValida(n)).toBe(true));
+  it.each([0, -1, 6, 4.5])('rejeita %s', (n) => expect(notaValida(n)).toBe(false));
 });
 
 describe('RNF04 - rotas públicas', () => {

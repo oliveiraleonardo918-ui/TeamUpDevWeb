@@ -17,9 +17,9 @@ export function funcaoComplementar(minha: Role, candidato: Role): boolean {
   return minha !== candidato;
 }
 
-/** RF10: nota de 0 a 5, inteira. */
+/** RF10: nota de 1 a 5 estrelas, inteira. */
 export function notaValida(nota: number): boolean {
-  return Number.isInteger(nota) && nota >= 0 && nota <= 5;
+  return Number.isInteger(nota) && nota >= 1 && nota <= 5;
 }
 
 /** RNF04: rotas da API que não exigem sessão. */

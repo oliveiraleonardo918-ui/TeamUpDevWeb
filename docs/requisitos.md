@@ -25,7 +25,7 @@ Jornada: login → perfil gamer → busca com filtros → convite mútuo → tro
 | RF07 | Enviar convite de dupla | Jornada, passo 4 |
 | RF08 | Ver, aceitar e recusar convites recebidos | Jornada, passo 4 |
 | RF09 | Após o match, exibir Riot ID e Discord de ambos | Jornada, passo 5 |
-| RF10 | Avaliar o parceiro de 0 a 5 estrelas, com comentário opcional | Ciclo de feedback |
+| RF10 | Avaliar o parceiro de 1 a 5 estrelas, com comentário opcional | Ciclo de feedback |
 | RF11 | Denunciar um jogador informando o motivo | Moderação |
 | RF12 | Admin lista denúncias e bane jogadores | Moderação |
 
@@ -79,5 +79,5 @@ Ver `migrations/0001_init.sql`. Tabelas: `users`, `sessions`, `profiles`, `invit
 
 - Jogo do MVP: Valorant.
 - Login com Discord (OAuth2, escopo `identify`).
-- Avaliação de 0 a 5 estrelas entra no MVP.
+- Avaliação de 1 a 5 estrelas entra no MVP (decidido em 11/10/2026, alinhado ao protótipo).
 - Sem domínio próprio por enquanto: produção em `teamup.<subdominio>.workers.dev`, sem WAF.
