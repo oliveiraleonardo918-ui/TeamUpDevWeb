@@ -37,6 +37,10 @@ export function ContaSuspensa() {
               Falar com o suporte
             </a>
           )}
+          {/* Visível para copiar: o mailto não funciona sem um app de e-mail configurado */}
+          <p className="-mt-2 text-center text-xs text-texto-suave">
+            ou escreva para <span className="text-texto select-all">{EMAIL_SUPORTE}</span>
+          </p>
           <Link
             to="/"
             className="self-center rounded-caixa text-sm text-texto-suave hover:text-texto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque"
