@@ -87,7 +87,7 @@ jobs:
     name: DAST (ZAP contra o app no kind)
     needs: quality
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -140,12 +140,46 @@ jobs:
             zap-baseline.py -t http://127.0.0.1:8787 \
               -c rules.tsv -r zap-report.html -J zap-report.json -I
 
+      # Scan autenticado: sessão de teste criada direto no D1 do pod (cluster descartável do CI).
+      # Token novo a cada execução; no banco vai só o SHA-256, como no login real.
+      - name: Sessão de teste para o scan autenticado
+        run: |
+          TOKEN=$(openssl rand -hex 32)
+          echo "::add-mask::$TOKEN"
+          HASH=$(printf %s "$TOKEN" | sha256sum | cut -d' ' -f1)
+          { cat seeds/local.sql; sed "s/__HASH__/$HASH/" .zap/seed-autenticado.sql; } > /tmp/seed-ci.sql
+          kubectl -n teamup exec -i deploy/teamup -- sh -c 'cat > /tmp/seed-ci.sql' < /tmp/seed-ci.sql
+          kubectl -n teamup exec deploy/teamup -- ./node_modules/.bin/wrangler d1 execute DB --local --file /tmp/seed-ci.sql
+          rm /tmp/seed-ci.sql
+          echo "ZAP_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' -H "Cookie: sessao=$TOKEN" http://127.0.0.1:8787/api/me)
+          [ "$STATUS" = 200 ] || { echo "::error::Sessão de teste não autenticou (/api/me = $STATUS)"; exit 1; }
+
+      # Scan ATIVO só nas rotas GET do .zap/openapi-autenticado.yaml (não muda estado).
+      # Injeções (SQLi, XSS, path traversal, ...) estão como FAIL no api-rules.tsv.
+      - name: ZAP scan ativo autenticado (API)
+        run: |
+          cp .zap/openapi-autenticado.yaml .zap/api-rules.tsv zap-wrk/
+          docker run --rm --network host \
+            -v "$PWD/zap-wrk:/zap/wrk:rw" \
+            -e ZAP_AUTH_HEADER=Cookie \
+            -e ZAP_AUTH_HEADER_VALUE="sessao=$ZAP_TOKEN" \
+            -e ZAP_AUTH_HEADER_SITE=127.0.0.1 \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-api-scan.py -t /zap/wrk/openapi-autenticado.yaml -f openapi \
+              -c api-rules.tsv -r zap-auth-report.html -J zap-auth-report.json -I
+          # A sessão precisa seguir válida: se caiu no meio, o scan rodou deslogado
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' -H "Cookie: sessao=$ZAP_TOKEN" http://127.0.0.1:8787/api/me)
+          [ "$STATUS" = 200 ] || { echo "::error::Sessão caiu durante o scan (/api/me = $STATUS)"; exit 1; }
+
       - name: Relatório do ZAP
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: zap-report
-          path: zap-wrk/zap-report.*
+          path: |
+            zap-wrk/zap-report.*
+            zap-wrk/zap-auth-report.*
           if-no-files-found: ignore
 
       - name: Diagnóstico do cluster

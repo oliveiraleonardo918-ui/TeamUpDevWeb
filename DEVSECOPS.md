@@ -43,7 +43,7 @@ flowchart LR
 | SAST (Semgrep) | `ci.yml` → `sast` | Sim (achados WARNING/ERROR) |
 | SCA, segredos e IaC (Trivy) | `ci.yml` → `sca` | Sim (HIGH/CRITICAL com correção) |
 | Scan da imagem (Trivy) | `ci.yml` → `dast` | Não (informativo) |
-| DAST (OWASP ZAP) | `ci.yml` → `dast` | Sim (regras marcadas FAIL) |
+| DAST (OWASP ZAP): baseline sem login + scan ativo autenticado | `ci.yml` → `dast` | Sim (regras marcadas FAIL) |
 | Merge na `main` | Ruleset `proteger-main` | Exige PR e os 4 checks |
 | Staging | `deploy.yml` → `staging` | Smoke test precisa responder |
 | Produção | `deploy.yml` → `production` | Exige aprovação no environment |
@@ -128,8 +128,10 @@ sequenceDiagram
     GH->>Kind: kubectl apply -f k8s/teamup.yaml
     Kind-->>GH: rollout pronto (readiness em /api/health)
     GH->>Kind: port-forward 8787
-    GH->>ZAP: zap-baseline.py -t http://127.0.0.1:8787 -c rules.tsv
-    ZAP-->>GH: relatório HTML/JSON (artefato zap-report)
+    GH->>ZAP: zap-baseline.py -t http://127.0.0.1:8787 -c rules.tsv (sem login)
+    GH->>Kind: seed + sessão de teste no D1 do pod (token aleatório por execução)
+    GH->>ZAP: zap-api-scan.py (OpenAPI só GET, cookie da sessão) -c api-rules.tsv
+    ZAP-->>GH: relatórios HTML/JSON (artefato zap-report)
 ```
 
 - **A imagem** (`Dockerfile`) roda o Worker no `workerd` (o mesmo runtime da Cloudflare) via `vite preview`, com D1
@@ -142,6 +144,25 @@ sequenceDiagram
 | **FAIL** (bloqueia) | Falta de anti-clickjacking, `X-Content-Type-Options`, CSP, CORS mal configurado, cookie sem `HttpOnly` ou sem `Secure` |
 | **WARN** | Cookie sem `SameSite`, CSP com curinga ou `unsafe-inline` |
 | **IGNORE** | HSTS (o teste roda em HTTP local), comentários e timestamps no bundle minificado, alertas informativos |
+
+#### Scan ativo autenticado
+
+O baseline só enxerga o que é público (a SPA e as rotas `/api/auth/*`). Para alcançar as rotas logadas, o job:
+
+1. Gera um token aleatório (`openssl rand -hex 32`, mascarado no log) e grava no D1 **do pod** só o SHA-256 dele,
+   como no login real, junto com `seeds/local.sql` e `.zap/seed-autenticado.sql`: um usuário **moderador** (para
+   cobrir `/api/moderacao`), um match aceito, um convite e uma denúncia com evidência.
+2. Confere que a sessão funciona (`/api/me` = 200) antes de escanear.
+3. Roda o `zap-api-scan.py` com o cookie `sessao` (variáveis `ZAP_AUTH_HEADER*`) contra
+   `.zap/openapi-autenticado.yaml`: **só rotas GET**, com ids que existem no seed. O scan é **ativo** (injeta payloads),
+   e restringir a GET garante que ele não sai da conta, não bane ninguém nem exclui a própria conta.
+4. Confere de novo o `/api/me` no fim: se a sessão caiu, o scan rodou deslogado e o job falha.
+
+`.zap/api-rules.tsv` herda as regras do baseline e marca como **FAIL** as injeções: SQL injection (inclusive
+SQLite), XSS refletido e persistente, path traversal, inclusão de arquivo remoto, CRLF, SSI, injeção de código e de
+comando, XXE e SSTI.
+
+Tudo isso existe só no cluster descartável do CI: o seed e a sessão nunca chegam a staging nem à produção.
 
 - Se o job falhar, o passo **Diagnóstico do cluster** imprime pods, eventos e logs para facilitar a investigação.
 
@@ -303,5 +324,5 @@ Como as migrations só adicionam, voltar o Worker para a versão anterior não q
 - **Domínio próprio + WAF**: com a zona na Cloudflare, `custom_domain` e `workers_dev: false`, o WAF e as regras de
   rate limiting passam a ficar na frente do Worker.
 - **Testes de integração da API** com `@cloudflare/vitest-pool-workers` (rotas + D1 reais no CI).
-- **DAST autenticado**: ZAP com uma sessão de teste para cobrir as rotas logadas.
+- **DAST ativo nas rotas de escrita**: scan com banco recriado a cada rota, para atacar também POST/PUT sem perder o estado.
 - **Assinatura de commits** e verificação no ruleset.
