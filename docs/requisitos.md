@@ -81,3 +81,8 @@ Ver `migrations/0001_init.sql`. Tabelas: `users`, `sessions`, `profiles`, `invit
 - Login com Discord (OAuth2, escopo `identify`).
 - Avaliação de 1 a 5 estrelas entra no MVP (decidido em 11/10/2026, alinhado ao protótipo).
 - Sem domínio próprio por enquanto: produção em `teamup.<subdominio>.workers.dev`, sem WAF.
+- Admins definidos por configuração (`ADMIN_DISCORD_IDS`, muda só por PR); moderadores promovidos por admins na tela.
+- Avaliações feitas por contas banidas não contam na reputação (filtro reversível: voltam se a conta for desbanida).
+- Denúncias aceitam até 3 imagens de evidência (até 1 MB cada), visíveis só para a equipe.
+- Suporte por formulário dentro do site, enviado por e-mail (Resend) para suporteteamup@gmail.com.
+- Foto de perfil vem do Discord; clicar na foto abre o perfil público da pessoa.

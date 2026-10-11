@@ -207,6 +207,7 @@ Nenhum segredo fica no repositório. O Trivy (`secret`) e o Semgrep conferem iss
 | `DISCORD_CLIENT_SECRET` (staging/produção) | `wrangler secret put --env ...` (cifrado na Cloudflare) | Worker |
 | `CLOUDFLARE_API_TOKEN` | GitHub → Environments → secret (por ambiente) | Jobs de deploy |
 | `CLOUDFLARE_ACCOUNT_ID` | GitHub → Environments → secret | Jobs de deploy |
+| `RESEND_API_KEY` (staging/produção) | `wrangler secret put RESEND_API_KEY --env ...` | Worker (formulário de suporte) |
 | `APP_URL` | GitHub → Environments → variável | Smoke test |
 | `DISCORD_CLIENT_ID`, `ADMIN_DISCORD_IDS` | `wrangler.jsonc` (públicos, versionados de propósito) | Worker |
 
@@ -239,6 +240,14 @@ A CSP só permite recursos do próprio domínio (`default-src 'self'`); a única
 - **Limites anti-abuso**: convites pendentes, espera após recusa, denúncias por dia.
 - **Banimento imediato**: as sessões do banido são apagadas e a conferência ocorre a cada requisição.
 - **Auditoria**: toda ação da equipe vai para `moderacao_log` (quem, o quê, contra quem, quando e motivo).
+- **Reputação limpa**: avaliações de contas banidas saem de toda leitura de reputação (view `ratings_validas`).
+- **Uploads de evidência**: até 3 imagens de 1 MB; o tipo é conferido pelos bytes (PNG/JPEG/WebP), então um SVG ou
+  HTML renomeado é recusado. A imagem só é entregue à equipe, com `Content-Type` fixo, `Cache-Control: private,
+  no-store` e `Content-Security-Policy: default-src 'none'; sandbox`.
+- **Formulário de suporte** (única rota pública que grava dados): 3 mensagens por hora por IP (guardamos só o SHA-256
+  do IP), 100 por dia no total, campo-armadilha para robôs e e-mail enviado só como texto.
+- **Fotos de perfil**: a URL do CDN do Discord é montada no servidor depois de validar o id e o hash
+  (`avatarUrl()`); a CSP só libera imagens desse domínio além do próprio site.
 
 ### Observabilidade
 
@@ -268,6 +277,8 @@ Como as migrations só adicionam, voltar o Worker para a versão anterior não q
    e `APP_URL`; em `production`, marcar *Required reviewers*.
 4. **Discord Developer Portal**: redirects de `localhost`, staging e produção (`/api/auth/callback`).
 5. **Secrets do app**: `npx wrangler secret put DISCORD_CLIENT_SECRET --env staging` (e `--env production`).
+   Para o formulário de suporte: conta no [Resend](https://resend.com) com o e-mail do suporte, uma API key com
+   *Sending access* e `npx wrangler secret put RESEND_API_KEY --env staging` (e `--env production`).
 6. **Settings → General → Pull Requests**: *Allow auto-merge*. **Rules → Rulesets**: `proteger-main`.
 
 ### Problemas comuns
@@ -281,6 +292,9 @@ Como as migrations só adicionam, voltar o Worker para a versão anterior não q
 | `npm ci` com `ERESOLVE` num PR do Dependabot | Major incompatível (ex.: TypeScript novo sem suporte no typescript-eslint): feche o PR |
 | Falha no Semgrep, Trivy ou ZAP | Abra o job no Actions; o ZAP deixa o relatório no artefato `zap-report` |
 | Login cai em `/?erro=falha` | Redirect não cadastrado no Discord ou `DISCORD_CLIENT_SECRET` ausente no ambiente |
+| Formulário de suporte diz "Não foi possível enviar agora" | `RESEND_API_KEY` ausente no ambiente ou chave revogada; a mensagem fica guardada em `suporte_mensagens` |
+| E-mail do suporte cai no spam | Marque "Não é spam" uma vez no Gmail; o remetente é `onboarding@resend.dev` enquanto não houver domínio próprio |
+| Diagrama Mermaid não renderiza no GitHub | Rótulos com parênteses ou símbolos precisam de aspas: `A -->\|"texto (x)"\| B` |
 
 ---
 
