@@ -1,0 +1,62 @@
+# Escopo do scan ATIVO autenticado do ZAP (job DAST do CI).
+# Só rotas GET: o scan ativo injeta payloads nos parâmetros, e em GET isso não muda estado
+# (não sai da sessão, não bane, não exclui conta). Rotas de escrita ficam no baseline passivo.
+# Os ids de exemplo existem no D1 do cluster de teste (seeds/local.sql + .zap/seed-autenticado.sql).
+openapi: 3.0.3
+info:
+  title: TeamUp API (escopo do scan autenticado)
+  version: "1"
+servers:
+  - url: http://127.0.0.1:8787
+paths:
+  /api/me:
+    get:
+      responses: { "200": { description: Usuário da sessão } }
+  /api/perfil:
+    get:
+      responses: { "200": { description: Perfil próprio } }
+  /api/jogadores:
+    get:
+      parameters:
+        - { name: eloMin, in: query, schema: { type: string, example: prata } }
+        - { name: eloMax, in: query, schema: { type: string, example: diamante } }
+        - { name: complementar, in: query, schema: { type: string, example: "1" } }
+        - { name: turno, in: query, schema: { type: string, example: noite } }
+        - { name: estilo, in: query, schema: { type: string, example: competitivo } }
+        - { name: genero, in: query, schema: { type: string, example: mulher } }
+      responses: { "200": { description: Busca de jogadores } }
+  /api/jogadores/{id}:
+    get:
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, example: 00000000-0000-4000-8000-000000000001 } }
+      responses: { "200": { description: Perfil público } }
+  /api/convites:
+    get:
+      responses: { "200": { description: Convites } }
+  /api/matches:
+    get:
+      responses: { "200": { description: Matches } }
+  /api/matches/{id}:
+    get:
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, example: 00000000-0000-4000-b000-00000000c1c2 } }
+      responses: { "200": { description: Match (Riot ID e Discord, RN02) } }
+  /api/equipe:
+    get:
+      responses: { "200": { description: Equipe de moderação } }
+  /api/equipe/candidatos:
+    get:
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, example: Luna } }
+      responses: { "200": { description: Candidatos a moderador } }
+  /api/moderacao:
+    get:
+      responses: { "200": { description: Painel de denúncias } }
+  /api/moderacao/banidos:
+    get:
+      responses: { "200": { description: Usuários banidos } }
+  /api/moderacao/evidencias/{id}:
+    get:
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, example: 00000000-0000-4000-b000-00000000c1c4 } }
+      responses: { "200": { description: Arquivo de evidência } }

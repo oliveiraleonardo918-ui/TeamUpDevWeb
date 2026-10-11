@@ -1,0 +1,28 @@
+# Regras do scan ATIVO autenticado (zap-api-scan.py). Formato: id<TAB>FAIL|WARN|IGNORE<TAB>nome
+# Herda o rules.tsv do baseline e soma as injeções: qualquer achado delas quebra o CI.
+10020	FAIL	Missing Anti-clickjacking Header
+10021	FAIL	X-Content-Type-Options Header Missing
+10038	FAIL	Content Security Policy (CSP) Header Not Set
+10098	FAIL	Cross-Domain Misconfiguration (CORS)
+10010	FAIL	Cookie No HttpOnly Flag
+10011	FAIL	Cookie Without Secure Flag
+10054	WARN	Cookie without SameSite Attribute
+10055	WARN	CSP: wildcard / unsafe-inline
+10035	IGNORE	Strict-Transport-Security Header Not Set (ambiente local em HTTP)
+10027	IGNORE	Information Disclosure - Suspicious Comments (bundle minificado)
+10096	IGNORE	Timestamp Disclosure (falso positivo em bundle JS)
+10109	IGNORE	Modern Web Application (informativo)
+10049	IGNORE	Storable and Cacheable Content (informativo)
+6	FAIL	Path Traversal
+7	FAIL	Remote File Inclusion
+40003	FAIL	CRLF Injection
+40009	FAIL	Server Side Include
+40012	FAIL	Cross Site Scripting (Reflected)
+40014	FAIL	Cross Site Scripting (Persistent)
+40018	FAIL	SQL Injection
+40024	FAIL	SQL Injection - SQLite
+90019	FAIL	Server Side Code Injection
+90020	FAIL	Remote OS Command Injection
+90023	FAIL	XML External Entity Attack
+90035	FAIL	Server Side Template Injection
+90036	FAIL	Server Side Template Injection (Blind)

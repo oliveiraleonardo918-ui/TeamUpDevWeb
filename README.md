@@ -145,7 +145,7 @@ Todas as regras são funções puras em [`worker/rules.ts`](worker/rules.ts), co
 - **[GitHub Actions](https://github.com/features/actions)**: pipeline de CI/CD com ambientes `staging` e
   `production` (com aprovação manual).
 - **[Semgrep](https://semgrep.dev/)** (SAST), **[Trivy](https://trivy.dev/)** (dependências, segredos e IaC) e
-  **[OWASP ZAP](https://www.zaproxy.org/)** (DAST) como gates de segurança.
+  **[OWASP ZAP](https://www.zaproxy.org/)** (DAST: baseline sem login e scan ativo autenticado) como gates de segurança.
 - **[Docker](https://www.docker.com/) + [kind](https://kind.sigs.k8s.io/)**: o app roda num Kubernetes efêmero
   dentro do CI só para o ZAP atacar uma instância real.
 - **[Dependabot](https://docs.github.com/code-security/dependabot)**: atualizações semanais de npm, Actions e imagem base.
@@ -221,7 +221,7 @@ TeamUpDevWeb/
 │   │   ├── ci.yml           # Qualidade, SAST, SCA/segredos/IaC e DAST
 │   │   └── deploy.yml       # CI → staging → aprovação → produção
 │   └── dependabot.yml
-├── .zap/rules.tsv           # Regras do ZAP (FAIL / WARN / IGNORE)
+├── .zap/                    # Regras do ZAP, escopo (OpenAPI) e seed do scan autenticado
 ├── docs/requisitos.md       # Requisitos, regras de negócio e decisões do time
 ├── k8s/teamup.yaml          # Deploy efêmero no kind (só para o DAST)
 ├── migrations/              # 0001 a 0010, só adicionam (compatíveis com a versão anterior)
