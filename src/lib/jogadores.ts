@@ -23,7 +23,11 @@ export interface AvaliacaoRecebida {
   comentario: string;
 }
 
+export type Relacao = 'nenhuma' | 'convite_enviado' | 'convite_recebido' | 'match' | 'proprio';
+
 export interface PerfilPublico extends Omit<CardJogador, 'nota' | 'avaliacoes'> {
+  relacao: Relacao;
+  matchId: string | null;
   bio: string | null;
   genero: Genero | null;
   reputacao: {

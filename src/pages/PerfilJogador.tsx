@@ -9,16 +9,14 @@ import { Estrelas, formatarNota } from '../components/Estrelas';
 import { Icone } from '../components/Icone';
 import { Indicador } from '../components/Indicador';
 import { Layout } from '../components/Layout';
+import { ApiError } from '../lib/api';
+import { enviarConvite, MENSAGENS_CONVITE } from '../lib/convites';
+import { formatarData } from '../lib/datas';
 import { buscarPerfilPublico, iconeFuncao, resumoJogo, rotulo, type PerfilPublico } from '../lib/jogadores';
 import { ELOS, FUNCOES, GENEROS } from '../lib/perfil';
 import { useProtegido } from '../lib/useProtegido';
 
 const AVALIACOES_INICIAIS = 3;
-
-function formatarData(sql: string): string {
-  // "2026-10-09 21:30:00" (UTC, do SQLite) → "09/10/2026"
-  return new Date(`${sql.replace(' ', 'T')}Z`).toLocaleDateString('pt-BR');
-}
 
 /** Perfil público de um jogador (RF06): dados de jogo, reputação e avaliações. Sem contatos (RN02). */
 export function PerfilJogador() {
@@ -73,6 +71,51 @@ export function PerfilJogador() {
   );
 }
 
+/** Botão principal do perfil conforme a relação com o jogador (RF07). */
+function AcaoConvite({ p }: { p: PerfilPublico }) {
+  const navigate = useNavigate();
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function convidar() {
+    setEnviando(true);
+    setErro(null);
+    try {
+      await enviarConvite(p.id);
+      navigate(`/convites?aba=enviados&enviado=${encodeURIComponent(p.nome)}`);
+    } catch (e) {
+      setErro((e instanceof ApiError && MENSAGENS_CONVITE[e.message]) || 'Não foi possível enviar o convite. Tente de novo.');
+      setEnviando(false);
+    }
+  }
+
+  switch (p.relacao) {
+    case 'proprio':
+      return <p className="text-center text-xs text-texto-suave">Este é o seu perfil público.</p>;
+    case 'match':
+      return <Botao onClick={() => navigate(`/matches/${p.matchId}`)}>Ver contatos</Botao>;
+    case 'convite_recebido':
+      return <Botao onClick={() => navigate('/convites?aba=recebidos')}>Responder convite</Botao>;
+    case 'convite_enviado':
+      return (
+        <>
+          <Botao disabled>Convite enviado</Botao>
+          <p className="-mt-2 text-center text-xs text-texto-suave">Aguardando a resposta.</p>
+        </>
+      );
+    default:
+      return (
+        <>
+          <Botao onClick={convidar} disabled={enviando}>
+            <Icone src={iconeConvidar} tamanho={18} />
+            {enviando ? 'Enviando...' : 'Convidar para duo'}
+          </Botao>
+          {erro && <Aviso titulo={erro} />}
+        </>
+      );
+  }
+}
+
 function Conteudo({ p }: { p: PerfilPublico }) {
   const [verTodas, setVerTodas] = useState(false);
   const funcoes = [p.funcaoPrimaria, p.funcaoSecundaria].filter((f) => f !== null);
@@ -107,11 +150,7 @@ function Conteudo({ p }: { p: PerfilPublico }) {
               <p className="text-md">{p.bio}</p>
             </>
           )}
-          <Botao disabled title="Disponível na próxima atualização">
-            <Icone src={iconeConvidar} tamanho={18} />
-            Convidar para duo
-          </Botao>
-          <p className="-mt-2 text-center text-xs text-texto-suave">Os convites chegam na próxima atualização.</p>
+          <AcaoConvite p={p} />
         </Cartao>
         <Aviso tom="info" titulo="Contatos protegidos">
           Riot ID e Discord só aparecem depois de um match mútuo.
