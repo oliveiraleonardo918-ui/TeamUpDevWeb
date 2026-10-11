@@ -1,21 +1,12 @@
-import { useEffect, useState } from 'react';
-
-type Health = { status: string; env: string };
+import { Route, Routes } from 'react-router';
+import { Entrar } from './pages/Entrar';
+import { NaoEncontrada } from './pages/NaoEncontrada';
 
 export function App() {
-  const [health, setHealth] = useState<Health | null>(null);
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then((r) => r.json() as Promise<Health>)
-      .then(setHealth)
-      .catch(() => setHealth({ status: 'offline', env: '?' }));
-  }, []);
-
   return (
-    <main>
-      <h1>TeamUp</h1>
-      <p>API: {health ? `${health.status} (${health.env})` : 'verificando...'}</p>
-    </main>
+    <Routes>
+      <Route path="/" element={<Entrar />} />
+      <Route path="*" element={<NaoEncontrada />} />
+    </Routes>
   );
 }
