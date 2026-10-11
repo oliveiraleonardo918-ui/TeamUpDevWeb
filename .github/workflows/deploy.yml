@@ -14,10 +14,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: deploy
-  cancel-in-progress: false
-
 jobs:
   ci:
     uses: ./.github/workflows/ci.yml
@@ -27,6 +23,11 @@ jobs:
 
   staging:
     needs: ci
+    # Concorrência por ambiente: um deploy de produção esperando aprovação não trava o staging.
+    # Se chegar um push novo, o deploy pendente mais antigo do mesmo ambiente é substituído.
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
@@ -54,6 +55,9 @@ jobs:
 
   production:
     needs: staging
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
