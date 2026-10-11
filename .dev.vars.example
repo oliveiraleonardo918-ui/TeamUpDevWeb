@@ -1,0 +1,4 @@
+# Copie para .dev.vars (não versionado). Em staging/produção use:
+#   npx wrangler secret put DISCORD_CLIENT_SECRET --env staging
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=

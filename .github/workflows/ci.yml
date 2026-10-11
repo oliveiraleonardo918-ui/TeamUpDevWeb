@@ -1,0 +1,156 @@
+# CI: roda em todo PR para a main e é reaproveitado pelo deploy (workflow_call).
+# Gates: qualidade -> SAST (Semgrep) -> SCA/segredos/IaC (Trivy) -> DAST (ZAP no kind).
+# Actions fixadas por SHA de commit: tags podem ser reescritas (caso trivy-action, mar/2026).
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, tipos, testes e build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  sast:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+    container:
+      image: semgrep/semgrep:1.180.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Bloqueia só WARNING/ERROR; achados INFO (estilo, i18n) não quebram o PR
+      - name: Semgrep scan
+        run: >-
+          semgrep scan
+          --config p/default --config p/typescript --config p/react
+          --severity WARNING --severity ERROR
+          --metrics off --error
+          --sarif --output semgrep.sarif
+      - name: Publicar na aba Security (só em repositório público)
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+
+  sca:
+    name: Dependências, segredos e IaC (Trivy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Trivy fs (package-lock, Dockerfile, manifests k8s, segredos)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.70.0
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+  dast:
+    name: DAST (ZAP contra o app no kind)
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build da imagem de teste
+        run: docker build -t teamup:ci .
+
+      - name: Trivy image (informativo, não bloqueia)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.70.0
+          scan-type: image
+          image-ref: teamup:ci
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "0"
+          format: table
+
+      - name: Criar cluster kind
+        uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+        with:
+          cluster_name: teamup
+
+      - name: Deploy no cluster
+        run: |
+          kind load docker-image teamup:ci --name teamup
+          kubectl apply -f k8s/teamup.yaml
+          kubectl -n teamup rollout status deploy/teamup --timeout=180s
+
+      - name: Expor o serviço no runner
+        run: |
+          kubectl -n teamup port-forward svc/teamup 8787:80 > /tmp/port-forward.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8787/api/health && exit 0
+            sleep 2
+          done
+          echo "::error::App não respondeu no /api/health"
+          exit 1
+
+      - name: ZAP baseline
+        run: |
+          mkdir -p zap-wrk
+          cp .zap/rules.tsv zap-wrk/
+          chmod 777 zap-wrk
+          # -I: avisos (WARN) não quebram o build; só regras marcadas FAIL no rules.tsv
+          docker run --rm --network host \
+            -v "$PWD/zap-wrk:/zap/wrk:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py -t http://127.0.0.1:8787 \
+              -c rules.tsv -r zap-report.html -J zap-report.json -I
+
+      - name: Relatório do ZAP
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: zap-report
+          path: zap-wrk/zap-report.*
+          if-no-files-found: ignore
+
+      - name: Diagnóstico do cluster
+        if: failure()
+        run: |
+          kubectl -n teamup get all
+          kubectl -n teamup describe deploy/teamup
+          kubectl -n teamup logs deploy/teamup --tail=200

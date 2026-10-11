@@ -1,0 +1,86 @@
+# Ambiente efêmero de testes: sobe no kind dentro do GitHub Actions,
+# recebe o scan do ZAP e é destruído ao fim do job.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: teamup
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: teamup
+  namespace: teamup
+  labels:
+    app: teamup
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: teamup
+  template:
+    metadata:
+      labels:
+        app: teamup
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: teamup:ci # carregada com `kind load`, nunca puxada de registry
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8787
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: d1-state
+              mountPath: /app/.wrangler/state
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: d1-state
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: teamup
+  namespace: teamup
+spec:
+  selector:
+    app: teamup
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

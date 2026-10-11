@@ -1,0 +1,57 @@
+// Configuração do Worker (frontend + API no mesmo deploy).
+// O ambiente é escolhido no BUILD: CLOUDFLARE_ENV=staging npm run build
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "teamup",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "not_found_handling": "single-page-application",
+    // Rotas /api/* sempre passam pelo Worker antes dos arquivos estáticos
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": { "enabled": true },
+
+  // Top-level = desenvolvimento local e o container de testes (DAST)
+  "vars": { "APP_ENV": "local" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "teamup-local",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "env": {
+    "staging": {
+      "name": "teamup-staging",
+      "vars": { "APP_ENV": "staging" },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "teamup-staging",
+          "database_id": "TROCAR-PELO-ID-DO-D1-STAGING",
+          "migrations_dir": "migrations"
+        }
+      ]
+    },
+    "production": {
+      "name": "teamup",
+      // Desliga *.workers.dev e preview URLs: o tráfego só entra pelo
+      // domínio próprio, onde o WAF da zona fica na frente do Worker.
+      "workers_dev": false,
+      "preview_urls": false,
+      "routes": [{ "pattern": "teamup.SEU-DOMINIO.com.br", "custom_domain": true }],
+      "vars": { "APP_ENV": "production" },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "teamup-production",
+          "database_id": "TROCAR-PELO-ID-DO-D1-PRODUCAO",
+          "migrations_dir": "migrations"
+        }
+      ]
+    }
+  }
+}

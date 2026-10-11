@@ -1,0 +1,83 @@
+# CD: push na main -> CI completo -> staging (migrations + deploy + smoke)
+#     -> aprovação manual -> produção (migrations + deploy + smoke).
+#
+# Configuração no GitHub (Settings > Environments):
+#   staging:    secrets CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID; var APP_URL
+#   production: mesmos secrets/var + "Required reviewers" (é o que cria o botão de aprovação)
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  staging:
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: staging
+      url: ${{ vars.APP_URL }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      # Migrations antes do deploy: precisam ser compatíveis com a versão anterior do código
+      - run: npm run db:migrate:staging
+      - run: npm run build
+        env:
+          CLOUDFLARE_ENV: staging
+      - run: npx wrangler deploy
+      - name: Smoke test
+        run: curl -fsS --retry 5 --retry-delay 3 --retry-all-errors "${{ vars.APP_URL }}/api/health"
+
+  production:
+    needs: staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+      url: ${{ vars.APP_URL }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run db:migrate:production
+      - run: npm run build
+        env:
+          CLOUDFLARE_ENV: production
+      - run: npx wrangler deploy
+      - name: Smoke test
+        run: curl -fsS --retry 5 --retry-delay 3 --retry-all-errors "${{ vars.APP_URL }}/api/health"
