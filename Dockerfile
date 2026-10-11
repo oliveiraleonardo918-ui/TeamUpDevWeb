@@ -2,14 +2,14 @@
 # Produção roda no Cloudflare Workers; aqui o Worker roda no workerd local
 # (o mesmo runtime da Cloudflare) via `vite preview`, com D1 local em SQLite.
 
-FROM node:22-bookworm-slim AS build
+FROM node:25-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build
 
-FROM node:22-bookworm-slim
+FROM node:25-bookworm-slim
 ENV HOME=/tmp \
     CI=true \
     WRANGLER_SEND_METRICS=false \
