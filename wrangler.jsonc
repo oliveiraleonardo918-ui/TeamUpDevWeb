@@ -12,8 +12,11 @@
   },
   "observability": { "enabled": true },
 
+  // ADMIN_DISCORD_IDS: IDs do Discord dos admins, separados por vírgula. Só muda por PR (ver README,
+  // "Administração e moderação"). Moderadores são definidos pelos admins na página Equipe.
+
   // Top-level = desenvolvimento local e o container de testes (DAST)
-  "vars": { "APP_ENV": "local", "DISCORD_CLIENT_ID": "1558670127350685728" },
+  "vars": { "APP_ENV": "local", "DISCORD_CLIENT_ID": "1558670127350685728", "ADMIN_DISCORD_IDS": "324755887363194893" },
   "d1_databases": [
     {
       "binding": "DB",
@@ -26,7 +29,7 @@
   "env": {
     "staging": {
       "name": "teamup-staging",
-      "vars": { "APP_ENV": "staging", "DISCORD_CLIENT_ID": "1558670127350685728" },
+      "vars": { "APP_ENV": "staging", "DISCORD_CLIENT_ID": "1558670127350685728", "ADMIN_DISCORD_IDS": "324755887363194893" },
       "d1_databases": [
         {
           "binding": "DB",
@@ -44,7 +47,7 @@
       // Assim o tráfego só entra pelo domínio, onde o WAF fica na frente do Worker.
       "workers_dev": true,
       "preview_urls": false,
-      "vars": { "APP_ENV": "production", "DISCORD_CLIENT_ID": "1558670127350685728" },
+      "vars": { "APP_ENV": "production", "DISCORD_CLIENT_ID": "1558670127350685728", "ADMIN_DISCORD_IDS": "324755887363194893" },
       "d1_databases": [
         {
           "binding": "DB",

@@ -3,6 +3,8 @@ import iconeBuscar from '../assets/icons/search.svg';
 import iconeConvites from '../assets/icons/nav-convites.svg';
 import iconeMatches from '../assets/icons/nav-matches.svg';
 import iconePerfil from '../assets/icons/nav-perfil.svg';
+import iconeModeracao from '../assets/icons/shield.svg';
+import type { Me } from '../lib/api';
 import { Icone } from './Icone';
 
 interface Destino {
@@ -11,6 +13,13 @@ interface Destino {
   icone: string;
   /** Outros caminhos em que o item aparece como ativo. */
   tambemEm?: string[];
+}
+
+// Só para a equipe. Por enquanto leva à página Equipe (admin); as denúncias entram em /moderacao.
+const moderacao: Destino = { rotulo: 'Moderação', para: '/moderacao/equipe', icone: iconeModeracao, tambemEm: ['/moderacao'] };
+
+function destinosDe(eu: Me | null): Destino[] {
+  return eu?.papel === 'admin' ? [...destinos, moderacao] : destinos;
 }
 
 const destinos: Destino[] = [
@@ -39,12 +48,14 @@ function Selo({ destino, pendentes }: { destino: Destino; pendentes: number }) {
 }
 
 /** Navegação principal no topo (desktop). */
-export function NavegacaoTopo({ pendentes }: { pendentes: number }) {
+export function NavegacaoTopo({ eu }: { eu: Me | null }) {
   const ativo = useAtivo();
+  const lista = destinosDe(eu);
+  const pendentes = eu?.convitesPendentes ?? 0;
   return (
     <nav aria-label="Principal" className="hidden lg:block">
-      <ul className="flex w-120 text-center text-base">
-        {destinos.map((d) => (
+      <ul className={`flex text-center text-base ${lista.length > 4 ? 'w-150' : 'w-120'}`}>
+        {lista.map((d) => (
           <li key={d.para} className="flex-1">
             <NavLink
               to={d.para}
@@ -64,15 +75,17 @@ export function NavegacaoTopo({ pendentes }: { pendentes: number }) {
 }
 
 /** Navegação principal fixa embaixo (celular). */
-export function NavegacaoInferior({ pendentes }: { pendentes: number }) {
+export function NavegacaoInferior({ eu }: { eu: Me | null }) {
   const ativo = useAtivo();
+  const lista = destinosDe(eu);
+  const pendentes = eu?.convitesPendentes ?? 0;
   return (
     <nav
       aria-label="Principal"
       className="fixed inset-x-0 bottom-0 z-10 h-20 border-t border-borda bg-superficie px-6 py-3 lg:hidden"
     >
       <ul className="flex h-full text-center text-2xs">
-        {destinos.map((d) => (
+        {lista.map((d) => (
           <li key={d.para} className="flex-1">
             <NavLink
               to={d.para}

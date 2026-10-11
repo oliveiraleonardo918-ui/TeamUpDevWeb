@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   compatibilidade,
+  listaAdmins,
+  papelEfetivo,
+  podeModerar,
+  podeMudarModerador,
   MAX_CONVITES_PENDENTES,
   podeConvidar,
   decidirLogin,
@@ -173,4 +177,40 @@ describe('RN04 - avaliação', () => {
   it('convite pendente ou recusado não é match', () =>
     expect(podeAvaliar({ ...ok, matchAceito: false })).toBe('nao_encontrado'));
   it('uma avaliação por match', () => expect(podeAvaliar({ ...ok, jaAvaliou: true })).toBe('ja_avaliado'));
+});
+
+describe('Papéis da equipe', () => {
+  const admins = listaAdmins(' 324755887363194893 , ,abc,42');
+  it('lê a lista de admins da configuração e ignora lixo', () => expect([...admins]).toEqual(['324755887363194893', '42']));
+  it('admin vem da configuração, mesmo que o banco diga outra coisa', () =>
+    expect(papelEfetivo('42', 'jogador', admins)).toBe('admin'));
+  it('moderador vem do banco', () => expect(papelEfetivo('7', 'moderador', admins)).toBe('moderador'));
+  it('valor desconhecido no banco vira jogador', () => expect(papelEfetivo('7', 'admin', admins)).toBe('jogador'));
+  it('moderador e admin moderam; jogador não', () => {
+    expect(podeModerar('moderador')).toBe(true);
+    expect(podeModerar('admin')).toBe(true);
+    expect(podeModerar('jogador')).toBe(false);
+  });
+});
+
+describe('Equipe: promover e remover moderadores', () => {
+  const admin = { id: 'a', papel: 'admin' as const };
+  const jogador = { id: 'j', papel: 'jogador' as const, banido: false };
+  it('admin promove jogador', () => expect(podeMudarModerador({ ator: admin, alvo: jogador, acao: 'promover' })).toBeNull());
+  it('moderador não promove ninguém', () =>
+    expect(podeMudarModerador({ ator: { id: 'm', papel: 'moderador' }, alvo: jogador, acao: 'promover' })).toBe('sem_permissao'));
+  it('não promove banido', () =>
+    expect(podeMudarModerador({ ator: admin, alvo: { ...jogador, banido: true }, acao: 'promover' })).toBe('papel_invalido'));
+  it('não mexe em admin pela interface', () =>
+    expect(podeMudarModerador({ ator: admin, alvo: { id: 'b', papel: 'admin', banido: false }, acao: 'remover' })).toBe(
+      'papel_invalido',
+    ));
+  it('não age sobre si mesmo', () =>
+    expect(podeMudarModerador({ ator: admin, alvo: { id: 'a', papel: 'admin', banido: false }, acao: 'remover' })).toBe(
+      'proprio_usuario',
+    ));
+  it('remove só quem é moderador', () => {
+    expect(podeMudarModerador({ ator: admin, alvo: { id: 'm', papel: 'moderador', banido: false }, acao: 'remover' })).toBeNull();
+    expect(podeMudarModerador({ ator: admin, alvo: jogador, acao: 'remover' })).toBe('papel_invalido');
+  });
 });

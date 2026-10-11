@@ -3,6 +3,7 @@ import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { createMiddleware } from 'hono/factory';
 import type { AppEnv } from './env';
+import { listaAdmins, papelEfetivo } from './rules';
 
 const COOKIE_SESSAO = 'sessao';
 const DURACAO_SESSAO_S = 60 * 60 * 24 * 30; // 30 dias
@@ -67,7 +68,7 @@ interface LinhaSessao {
   nome: string;
   discord_username: string;
   avatar: string | null;
-  is_admin: number;
+  papel: string;
   banido: number;
 }
 
@@ -79,7 +80,7 @@ export const exigirSessao = createMiddleware<AppEnv>(async (c, next) => {
   }
 
   const linha = await c.env.DB.prepare(
-    `SELECT u.id, u.discord_id, u.nome, u.discord_username, u.avatar, u.is_admin, u.banido
+    `SELECT u.id, u.discord_id, u.nome, u.discord_username, u.avatar, u.papel, u.banido
        FROM sessions s JOIN users u ON u.id = s.user_id
       WHERE s.id = ? AND s.expira_em > datetime('now')`,
   )
@@ -102,7 +103,7 @@ export const exigirSessao = createMiddleware<AppEnv>(async (c, next) => {
     nome: linha.nome,
     discordUsername: linha.discord_username,
     avatar: linha.avatar,
-    isAdmin: linha.is_admin === 1,
+    papel: papelEfetivo(linha.discord_id, linha.papel, listaAdmins(c.env.ADMIN_DISCORD_IDS)),
   });
   await next();
 });

@@ -55,6 +55,33 @@ docker run --rm --network host -v "$PWD/zap-wrk:/zap/wrk:rw" ghcr.io/zaproxy/zap
    Para auto-merge, use o botão nativo "Enable auto-merge" do PR: merges feitos com o
    `GITHUB_TOKEN` (como no bot do CloudQuiz) **não disparam** o workflow de deploy.
 
+## Administração e moderação
+
+Três papéis: **jogador**, **moderador** (vê denúncias, arquiva e bane jogadores) e **admin** (tudo isso e ainda gerencia a equipe).
+
+- **Admins** vêm só da configuração: `ADMIN_DISCORD_IDS` no `wrangler.jsonc` (IDs do Discord separados por vírgula, por ambiente).
+  Ninguém vira admin pela tela, e admin não pode ser rebaixado nem banido pela interface.
+- **Moderadores** são promovidos e removidos por um admin na página **Moderação → Equipe** (`/moderacao/equipe`).
+- Toda ação da equipe vai para a tabela `moderacao_log`, visível no histórico da página Equipe.
+
+### Adicionar (ou remover) um admin
+
+1. A pessoa entra no TeamUp uma vez com o Discord.
+2. Descubra o ID do Discord dela. Opção A: no Discord, ative *Configurações → Avançado → Modo desenvolvedor*,
+   clique com o botão direito no perfil da pessoa → *Copiar ID do usuário*. Opção B (quem tem acesso à Cloudflare):
+   `npx wrangler d1 execute DB --remote --env production --command "SELECT discord_id, discord_username FROM users WHERE discord_username = 'usuario'"`
+3. Crie uma branch e edite `ADMIN_DISCORD_IDS` no `wrangler.jsonc` (`staging` e `production`; o topo é o ambiente local),
+   acrescentando o ID com vírgula: `"ADMIN_DISCORD_IDS": "324755887363194893,111222333444555666"`.
+4. Rode `npm run cf-typegen`, abra o PR e peça revisão de outro admin.
+5. Com o merge, o staging é publicado; aprove o deploy de produção em Actions. O papel vale no próximo acesso da pessoa (sem novo login).
+
+Para remover um admin, tire o ID da lista e siga os mesmos passos. Mantenha pelo menos um admin em cada ambiente.
+
+### Adicionar um moderador
+
+Um admin abre **Moderação → Equipe**, busca a pessoa pelo nome ou usuário do Discord, clica em **Promover** e,
+se quiser, informa o motivo (fica no histórico). Para tirar, **Remover** na lista de moderadores. Vale na hora.
+
 ## WAF (plano Free)
 
 Precisa de um domínio próprio na Cloudflare: o WAF age na zona, não no `*.workers.dev`.

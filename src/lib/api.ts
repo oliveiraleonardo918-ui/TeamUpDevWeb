@@ -47,7 +47,8 @@ export interface Me {
   nome: string;
   discordUsername: string;
   avatarUrl: string | null;
-  isAdmin: boolean;
+  papel: 'jogador' | 'moderador' | 'admin';
+  convitesPendentes: number;
 }
 
 export const buscarMe = () => api.get<Me>('/me');

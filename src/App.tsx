@@ -6,6 +6,7 @@ import { Convites } from './pages/Convites';
 import { ContaSuspensa } from './pages/ContaSuspensa';
 import { EditarPerfil } from './pages/EditarPerfil';
 import { Entrar } from './pages/Entrar';
+import { Equipe } from './pages/Equipe';
 import { Match } from './pages/Match';
 import { Matches } from './pages/Matches';
 import { NaoEncontrada } from './pages/NaoEncontrada';
@@ -23,6 +24,7 @@ export function App() {
       <Route path="/matches" element={<Matches />} />
       <Route path="/matches/:id" element={<Match />} />
       <Route path="/matches/:id/avaliar" element={<Avaliar />} />
+      <Route path="/moderacao/equipe" element={<Equipe />} />
       <Route path="/suspensa" element={<ContaSuspensa />} />
       <Route path="*" element={<NaoEncontrada />} />
     </Routes>

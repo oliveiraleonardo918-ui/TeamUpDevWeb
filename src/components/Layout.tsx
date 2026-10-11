@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
-import { contarConvitesPendentes } from '../lib/convites';
+import { buscarMe, type Me } from '../lib/api';
 import { NavegacaoInferior, NavegacaoTopo } from './Navegacao';
 
 /**
@@ -16,14 +16,14 @@ export function Layout({
   navegacao?: boolean;
   children: ReactNode;
 }) {
-  const [pendentes, setPendentes] = useState(0);
+  const [eu, setEu] = useState<Me | null>(null);
 
-  // Selo de convites no menu; falhar aqui não deve atrapalhar a página
+  // Papel (item Moderação) e selo de convites do menu; falhar aqui não deve atrapalhar a página
   useEffect(() => {
     if (!navegacao) return;
     let ativo = true;
-    contarConvitesPendentes()
-      .then((r) => ativo && setPendentes(r.pendentes))
+    buscarMe()
+      .then((r) => ativo && setEu(r))
       .catch(() => undefined);
     return () => {
       ativo = false;
@@ -39,7 +39,7 @@ export function Layout({
         >
           TeamUp<span className="text-destaque">.</span>
         </Link>
-        {navegacao ? <NavegacaoTopo pendentes={pendentes} /> : acoes}
+        {navegacao ? <NavegacaoTopo eu={eu} /> : acoes}
       </header>
 
       <main className="flex flex-1 flex-col items-center gap-7 px-6 pt-7 pb-8 lg:px-32 lg:py-12">
@@ -49,7 +49,7 @@ export function Layout({
         )}
       </main>
 
-      {navegacao && <NavegacaoInferior pendentes={pendentes} />}
+      {navegacao && <NavegacaoInferior eu={eu} />}
     </div>
   );
 }
