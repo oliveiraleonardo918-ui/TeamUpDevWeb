@@ -204,3 +204,42 @@ export function podeMudarModerador(p: {
   if (p.acao === 'remover' && p.alvo.papel !== 'moderador') return 'papel_invalido';
   return null;
 }
+
+export const MOTIVOS_DENUNCIA = ['toxicidade', 'assedio', 'afk', 'perfil_falso', 'outro'] as const;
+export const MAX_DENUNCIAS_POR_DIA = 10;
+
+/** RF11: pode denunciar? */
+export function podeDenunciar(p: {
+  euId: string;
+  alvoId: string;
+  jaTemAbertaContraAlvo: boolean;
+  denunciasHoje: number;
+}): 'proprio_usuario' | 'denuncia_existente' | 'limite_denuncias' | null {
+  if (p.euId === p.alvoId) return 'proprio_usuario';
+  if (p.jaTemAbertaContraAlvo) return 'denuncia_existente';
+  if (p.denunciasHoje >= MAX_DENUNCIAS_POR_DIA) return 'limite_denuncias';
+  return null;
+}
+
+/**
+ * RF12 + RN07: banir. Moderador bane só jogador; admin bane jogador ou moderador.
+ * Admin nunca é banido pela interface, e ninguém bane a si mesmo.
+ */
+export function podeBanir(
+  ator: { id: string; papel: Papel },
+  alvo: { id: string; papel: Papel; banido: boolean },
+): 'sem_permissao' | 'proprio_usuario' | 'alvo_protegido' | 'ja_banido' | null {
+  if (!podeModerar(ator.papel)) return 'sem_permissao';
+  if (ator.id === alvo.id) return 'proprio_usuario';
+  if (alvo.papel === 'admin') return 'alvo_protegido';
+  if (alvo.papel === 'moderador' && ator.papel !== 'admin') return 'alvo_protegido';
+  if (alvo.banido) return 'ja_banido';
+  return null;
+}
+
+/** Remover banimento (revisão): só admin. */
+export function podeDesbanir(ator: { papel: Papel }, alvo: { banido: boolean }): 'sem_permissao' | 'nao_banido' | null {
+  if (ator.papel !== 'admin') return 'sem_permissao';
+  if (!alvo.banido) return 'nao_banido';
+  return null;
+}

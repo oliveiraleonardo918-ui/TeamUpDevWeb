@@ -29,7 +29,7 @@ export function Modal({
       aria-label={titulo}
       onClose={onFechar}
       onClick={(e) => e.target === e.currentTarget && onFechar()}
-      className="m-auto w-[calc(100%-3rem)] max-w-100 rounded-xl border border-borda bg-superficie p-6 text-texto backdrop:bg-fundo/70"
+      className="m-auto w-[calc(100%-3rem)] max-w-110 rounded-xl border border-borda bg-superficie p-6 text-texto backdrop:bg-fundo/70"
     >
       <div className="mb-5 flex items-center justify-between gap-3">
         <h2 className="text-xl font-bold">{titulo}</h2>

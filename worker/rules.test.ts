@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   compatibilidade,
+  MAX_DENUNCIAS_POR_DIA,
+  podeBanir,
+  podeDenunciar,
+  podeDesbanir,
   listaAdmins,
   papelEfetivo,
   podeModerar,
@@ -212,5 +216,35 @@ describe('Equipe: promover e remover moderadores', () => {
   it('remove só quem é moderador', () => {
     expect(podeMudarModerador({ ator: admin, alvo: { id: 'm', papel: 'moderador', banido: false }, acao: 'remover' })).toBeNull();
     expect(podeMudarModerador({ ator: admin, alvo: jogador, acao: 'remover' })).toBe('papel_invalido');
+  });
+});
+
+describe('RF11 - denunciar', () => {
+  const base = { euId: 'a', alvoId: 'b', jaTemAbertaContraAlvo: false, denunciasHoje: 0 };
+  it('libera a primeira denúncia', () => expect(podeDenunciar(base)).toBeNull());
+  it('não denuncia a si mesmo', () => expect(podeDenunciar({ ...base, alvoId: 'a' })).toBe('proprio_usuario'));
+  it('uma denúncia aberta por pessoa', () =>
+    expect(podeDenunciar({ ...base, jaTemAbertaContraAlvo: true })).toBe('denuncia_existente'));
+  it('limita denúncias por dia', () =>
+    expect(podeDenunciar({ ...base, denunciasHoje: MAX_DENUNCIAS_POR_DIA })).toBe('limite_denuncias'));
+});
+
+describe('RF12 / RN07 - banir', () => {
+  const jogador = { id: 'j', papel: 'jogador' as const, banido: false };
+  const mod = { id: 'm', papel: 'moderador' as const };
+  const admin = { id: 'a', papel: 'admin' as const };
+  it('moderador bane jogador', () => expect(podeBanir(mod, jogador)).toBeNull());
+  it('jogador não bane', () => expect(podeBanir({ id: 'x', papel: 'jogador' }, jogador)).toBe('sem_permissao'));
+  it('moderador não bane moderador', () =>
+    expect(podeBanir(mod, { id: 'm2', papel: 'moderador', banido: false })).toBe('alvo_protegido'));
+  it('admin bane moderador', () => expect(podeBanir(admin, { id: 'm2', papel: 'moderador', banido: false })).toBeNull());
+  it('ninguém bane admin pela interface', () =>
+    expect(podeBanir(admin, { id: 'a2', papel: 'admin', banido: false })).toBe('alvo_protegido'));
+  it('ninguém bane a si mesmo', () => expect(podeBanir(mod, { id: 'm', papel: 'jogador', banido: false })).toBe('proprio_usuario'));
+  it('não bane duas vezes', () => expect(podeBanir(mod, { ...jogador, banido: true })).toBe('ja_banido'));
+  it('só admin remove banimento', () => {
+    expect(podeDesbanir({ papel: 'admin' }, { banido: true })).toBeNull();
+    expect(podeDesbanir({ papel: 'moderador' }, { banido: true })).toBe('sem_permissao');
+    expect(podeDesbanir({ papel: 'admin' }, { banido: false })).toBe('nao_banido');
   });
 });

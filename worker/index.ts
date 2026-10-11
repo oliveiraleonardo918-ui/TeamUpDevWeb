@@ -7,6 +7,7 @@ import { convites, matches } from './convites';
 import type { AppEnv } from './env';
 import { equipe } from './equipe';
 import { jogadores } from './jogadores';
+import { denuncias, moderacao } from './moderacao';
 import { perfil } from './perfil';
 import { rotaPublica } from './rules';
 import { exigirSessao } from './sessao';
@@ -52,6 +53,8 @@ app.route('/jogadores', jogadores);
 app.route('/convites', convites);
 app.route('/matches', matches);
 app.route('/equipe', equipe);
+app.route('/denuncias', denuncias);
+app.route('/moderacao', moderacao);
 
 app.notFound((c) => c.json({ error: 'not_found' }, 404));
 
