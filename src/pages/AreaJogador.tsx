@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router';
 import iconeSeta from '../assets/icons/arrow-right.svg';
 import iconeCadeado from '../assets/icons/lock-keyhole-suave.svg';
+import iconeLupa from '../assets/icons/search.svg';
 import { Avatar } from '../components/Avatar';
 import { Aviso } from '../components/Aviso';
 import { BarraProgresso } from '../components/BarraProgresso';
@@ -25,10 +26,6 @@ const PROXIMO_PASSO: Record<Etapa, string> = {
   horarios: 'definir seus horários',
   estilo: 'contar seu estilo de jogo',
 };
-
-function iniciais(nome: string): string {
-  return nome.trim().slice(0, 2).toUpperCase();
-}
 
 function listar(itens: string[]): string {
   return itens.length < 2 ? itens.join('') : `${itens.slice(0, -1).join(', ')} e ${itens.at(-1)}`;
@@ -110,7 +107,7 @@ export function AreaJogador() {
       <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-start">
         <Cartao className="flex flex-col gap-6 lg:w-92 lg:shrink-0">
           <div className="flex items-center gap-3">
-            <Avatar iniciais={iniciais(dados.nome)} tamanho="perfil" />
+            <Avatar nome={dados.nome} tamanho="perfil" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-nome font-bold">{dados.nome}</p>
               <p className="text-sm text-texto-suave">Conta do Discord conectada</p>
@@ -173,18 +170,27 @@ export function AreaJogador() {
           </Cartao>
 
           {dados.buscaLiberada ? (
-            <Aviso tom="info" titulo="Perfil mínimo completo">
-              A busca de duos já está liberada para você e chega na próxima atualização do TeamUp.
-            </Aviso>
+            <>
+              <Aviso tom="info" titulo="Perfil mínimo completo">
+                Busca liberada. Encontre alguém com afinidade e confira a reputação antes de convidar.
+              </Aviso>
+              <Botao variante="secundario" onClick={() => navigate('/buscar')}>
+                <Icone src={iconeLupa} tamanho={18} colorir />
+                Buscar duos
+              </Botao>
+            </>
           ) : (
             <>
               <Aviso tom="info" titulo="Complete o perfil mínimo: Riot ID e 1 horário">
                 Buscar está bloqueado até você preencher esses dados. Assim, seus convites já começam com afinidade.
               </Aviso>
-              <Botao variante="secundario" disabled className="text-texto-suave disabled:opacity-100">
+              <p
+                aria-disabled="true"
+                className="flex h-12 items-center justify-center gap-2 rounded-lg border border-borda bg-superficie-elevada font-bold text-texto-suave"
+              >
                 <Icone src={iconeCadeado} tamanho={18} />
                 Buscar bloqueado
-              </Botao>
+              </p>
             </>
           )}
         </div>

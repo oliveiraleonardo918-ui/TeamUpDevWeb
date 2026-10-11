@@ -8,6 +8,7 @@ Matchmaking de duos para Valorant. Frontend React + API Hono num único Cloudfla
 npm ci
 cp .dev.vars.example .dev.vars   # preencher credenciais do Discord
 npm run db:migrate:local
+npm run db:seed:local             # opcional: jogadores fictícios para testar a busca
 npm run dev                       # http://localhost:5173
 ```
 

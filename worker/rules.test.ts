@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  compatibilidade,
   decidirLogin,
+  faixaElo,
+  notaPublica,
   etapasConcluidas,
   funcaoComplementar,
   funcoesValidas,
@@ -109,4 +112,28 @@ describe('RN05 - gênero opcional com consentimento', () => {
     expect(generoParaSalvar('mulher', true)).toEqual({ genero: 'mulher', visivel: true });
     expect(generoParaSalvar('mulher', false)).toEqual({ genero: 'mulher', visivel: false });
   });
+});
+
+describe('RF05 - faixa de elo', () => {
+  it('é inclusiva', () => expect(faixaElo('prata', 'platina')).toEqual(['prata', 'ouro', 'platina']));
+  it('aceita mínimo e máximo invertidos', () => expect(faixaElo('platina', 'prata')).toEqual(['prata', 'ouro', 'platina']));
+  it('sem limites devolve todos', () => expect(faixaElo()).toHaveLength(9));
+});
+
+describe('Nota pública a partir de 3 avaliações', () => {
+  it('com menos de 3 avaliações é "Novo jogador"', () => {
+    expect(notaPublica(5, 2)).toBeNull();
+    expect(notaPublica(null, 0)).toBeNull();
+  });
+  it('arredonda para uma casa', () => expect(notaPublica(4.8333, 6)).toBe(4.8));
+});
+
+describe('Compatibilidade', () => {
+  const eu = { elo: 'ouro', funcaoPrimaria: 'controlador', turnos: ['noite'], estilo: 'competitivo' };
+  it('turno em comum e função complementar vêm primeiro', () => {
+    const afinado = { elo: 'ouro', funcaoPrimaria: 'duelista', turnos: ['noite'], estilo: 'competitivo' };
+    const distante = { elo: 'radiante', funcaoPrimaria: 'controlador', turnos: ['manha'], estilo: 'casual' };
+    expect(compatibilidade(eu, afinado)).toBeGreaterThan(compatibilidade(eu, distante));
+  });
+  it('perfil sem dados vale zero', () => expect(compatibilidade(eu, {})).toBe(0));
 });

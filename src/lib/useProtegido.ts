@@ -4,12 +4,13 @@ import { ApiError } from './api';
 
 /**
  * Carrega dados de uma rota que exige sessão. Sem sessão vai para a entrada; banido (RN07) para /suspensa.
- * `buscar` precisa ser estável (função de módulo, não criada a cada render).
+ * `buscar` precisa ser estável (função de módulo ou useCallback).
+ * `erro`: 'nao_encontrado' para 404; 'falha' para rede ou erro do servidor.
  */
 export function useProtegido<T>(buscar: () => Promise<T>) {
   const navigate = useNavigate();
   const [dados, setDados] = useState<T | null>(null);
-  const [erro, setErro] = useState(false);
+  const [erro, setErro] = useState<false | 'nao_encontrado' | 'falha'>(false);
   const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
@@ -20,7 +21,7 @@ export function useProtegido<T>(buscar: () => Promise<T>) {
         if (!ativo) return;
         if (e instanceof ApiError && e.status === 401) navigate('/', { replace: true });
         else if (e instanceof ApiError && e.status === 403) navigate('/suspensa', { replace: true });
-        else setErro(true);
+        else setErro(e instanceof ApiError && e.status === 404 ? 'nao_encontrado' : 'falha');
       });
     return () => {
       ativo = false;

@@ -1,4 +1,10 @@
-import { useId, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import {
+  useId,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
+} from 'react';
 
 // Borda de 1px; no foco fica com 2px verde-água (borda + contorno interno), como no protótipo
 const caixa =
@@ -58,6 +64,33 @@ export function AreaTexto({ rotulo, ajuda, erro, ...props }: Base & TextareaHTML
       ajuda={ajuda}
       erro={erro}
       controle={(a11y) => <textarea className={`${caixa} min-h-30 resize-y`} {...a11y} {...props} />}
+    />
+  );
+}
+
+/** Seleção nativa com o visual de "Campo" e a setinha ▾ do protótipo. */
+export function CampoSelecao({
+  rotulo,
+  ajuda,
+  erro,
+  children,
+  ...props
+}: Base & SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <Moldura
+      rotulo={rotulo}
+      ajuda={ajuda}
+      erro={erro}
+      controle={(a11y) => (
+        <div className="relative">
+          <select className={`${caixa} cursor-pointer appearance-none pr-9`} {...a11y} {...props}>
+            {children}
+          </select>
+          <span aria-hidden="true" className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-xs">
+            ▾
+          </span>
+        </div>
+      )}
     />
   );
 }

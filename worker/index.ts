@@ -4,6 +4,7 @@ import { HTTPException } from 'hono/http-exception';
 import { secureHeaders } from 'hono/secure-headers';
 import { auth } from './auth';
 import type { AppEnv } from './env';
+import { jogadores } from './jogadores';
 import { perfil } from './perfil';
 import { rotaPublica } from './rules';
 import { exigirSessao } from './sessao';
@@ -38,6 +39,7 @@ app.get('/me', (c) => {
 });
 
 app.route('/perfil', perfil);
+app.route('/jogadores', jogadores);
 
 app.notFound((c) => c.json({ error: 'not_found' }, 404));
 

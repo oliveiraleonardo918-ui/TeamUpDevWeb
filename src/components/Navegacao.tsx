@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router';
-import iconeBuscarBloqueado from '../assets/icons/nav-buscar-bloqueado.svg';
+import iconeBuscar from '../assets/icons/search.svg';
 import iconeConvites from '../assets/icons/nav-convites.svg';
 import iconeMatches from '../assets/icons/nav-matches.svg';
 import iconePerfil from '../assets/icons/nav-perfil.svg';
@@ -16,7 +16,7 @@ interface Destino {
 }
 
 const destinos: Destino[] = [
-  { rotulo: 'Buscar', para: '/buscar', icone: iconeBuscarBloqueado, disponivel: false },
+  { rotulo: 'Buscar', para: '/buscar', icone: iconeBuscar, disponivel: true, tambemEm: ['/jogadores/'] },
   { rotulo: 'Convites', para: '/convites', icone: iconeConvites, disponivel: false },
   { rotulo: 'Matches', para: '/matches', icone: iconeMatches, disponivel: false },
   { rotulo: 'Perfil', para: '/jogador', icone: iconePerfil, disponivel: true, tambemEm: ['/perfil/'] },
@@ -69,7 +69,7 @@ export function NavegacaoInferior() {
         {destinos.map((d) => {
           const conteudo = (
             <>
-              <Icone src={d.icone} tamanho={20} />
+              <Icone src={d.icone} tamanho={20} colorir />
               {d.rotulo}
             </>
           );

@@ -85,3 +85,41 @@ export function generoParaSalvar(
   if (!genero || genero === 'nao_informar') return { genero: null, visivel: false };
   return { genero, visivel };
 }
+
+/** Elos em ordem crescente. */
+export const ELOS = ['ferro', 'bronze', 'prata', 'ouro', 'platina', 'diamante', 'ascendente', 'imortal', 'radiante'] as const;
+export type Elo = (typeof ELOS)[number];
+
+/** RF05: elos dentro da faixa escolhida (inclusiva; aceita mínimo e máximo invertidos). */
+export function faixaElo(min: Elo = 'ferro', max: Elo = 'radiante'): Elo[] {
+  const [a, b] = [ELOS.indexOf(min), ELOS.indexOf(max)].sort((x, y) => x - y);
+  return ELOS.slice(a, b + 1);
+}
+
+/** Exibição: a nota pública só aparece a partir de 3 avaliações (antes disso, "Novo jogador"). */
+export function notaPublica(media: number | null, total: number): number | null {
+  if (total < 3 || media === null) return null;
+  return Math.round(media * 10) / 10;
+}
+
+export interface PerfilCompatibilidade {
+  elo?: string | null;
+  funcaoPrimaria?: string | null;
+  turnos?: string[] | null;
+  estilo?: string | null;
+}
+
+/**
+ * "Mais compatíveis primeiro": turnos em comum pesam mais, depois função complementar,
+ * elo próximo e mesmo estilo de jogo.
+ */
+export function compatibilidade(eu: PerfilCompatibilidade, outro: PerfilCompatibilidade): number {
+  let pontos = 0;
+  const meus = new Set(eu.turnos ?? []);
+  pontos += (outro.turnos ?? []).filter((t) => meus.has(t)).length * 3;
+  if (eu.funcaoPrimaria && outro.funcaoPrimaria && eu.funcaoPrimaria !== outro.funcaoPrimaria) pontos += 2;
+  const [a, b] = [ELOS.indexOf(eu.elo as Elo), ELOS.indexOf(outro.elo as Elo)];
+  if (a >= 0 && b >= 0) pontos += Math.max(0, 2 - Math.abs(a - b));
+  if (eu.estilo && eu.estilo === outro.estilo) pontos += 1;
+  return pontos;
+}

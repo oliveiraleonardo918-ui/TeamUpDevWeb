@@ -20,7 +20,8 @@
     "cf-typegen": "wrangler types",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:migrate:staging": "wrangler d1 migrations apply DB --remote --env staging",
-    "db:migrate:production": "wrangler d1 migrations apply DB --remote --env production"
+    "db:migrate:production": "wrangler d1 migrations apply DB --remote --env production",
+    "db:seed:local": "wrangler d1 execute DB --local --file seeds/local.sql"
   },
   "dependencies": {
     "@fontsource/arimo": "^5.3.0",

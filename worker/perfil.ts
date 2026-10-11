@@ -3,9 +3,8 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 import type { AppEnv } from './env';
-import { etapasConcluidas, funcoesValidas, generoParaSalvar, perfilCompleto, proximaEtapa, riotIdValido } from './rules';
+import { ELOS, etapasConcluidas, funcoesValidas, generoParaSalvar, perfilCompleto, proximaEtapa, riotIdValido } from './rules';
 
-const ELOS = ['ferro', 'bronze', 'prata', 'ouro', 'platina', 'diamante', 'ascendente', 'imortal', 'radiante'] as const;
 const FUNCOES = ['duelista', 'iniciador', 'controlador', 'sentinela'] as const;
 const TURNOS = ['manha', 'tarde', 'noite', 'madrugada'] as const;
 const ESTILOS = ['casual', 'competitivo'] as const;

@@ -53,12 +53,12 @@ export function Entrar() {
             A partida começa melhor quando a companhia respeita você.
           </p>
           <Cartao className="flex h-27.5 w-full items-center justify-center gap-4 lg:h-42.5">
-            <Avatar iniciais="MA" cor="verde" tamanho="lg" />
+            <Avatar nome="MA" cor="verde" tamanho="lg" />
             <div className="flex flex-col items-center gap-2">
               <Icone src={iconeLink} tamanho={24} />
               <span className="text-xs text-roxo">Respeito mútuo</span>
             </div>
-            <Avatar iniciais="LV" cor="roxo" tamanho="lg" />
+            <Avatar nome="LV" cor="roxo" tamanho="lg" />
           </Cartao>
           <p className="hidden text-sm text-texto-suave lg:block">
             Seu Riot ID e Discord ficam privados até os dois aceitarem jogar juntos.
