@@ -57,8 +57,8 @@ export function Privacidade() {
           <strong>Só quem deu match com você:</strong> Riot ID e usuário do Discord.
         </li>
         <li>
-          <strong>Só a equipe de moderação:</strong> denúncias, inclusive quem denunciou. O denunciado nunca sabe quem fez a
-          denúncia.
+          <strong>Só a equipe de moderação:</strong> denúncias, inclusive quem denunciou e as imagens anexadas como
+          evidência. O denunciado nunca sabe quem fez a denúncia.
         </li>
       </ul>
       <p>

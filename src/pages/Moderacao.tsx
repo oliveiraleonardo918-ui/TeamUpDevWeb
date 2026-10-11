@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Avatar } from '../components/Avatar';
 import { Aviso } from '../components/Aviso';
 import { Botao } from '../components/Botao';
 import { AreaTexto } from '../components/Campo';
 import { Cartao } from '../components/Cartao';
+import { Evidencias } from '../components/Evidencias';
 import { Layout } from '../components/Layout';
 import { Modal } from '../components/Modal';
 import { buscarMe, type Me } from '../lib/api';
@@ -12,26 +13,33 @@ import { formatarData, formatarDataHora } from '../lib/datas';
 import {
   arquivarDenuncia,
   banir,
+  buscarBanidos,
   buscarPainel,
   desbanir,
   rotuloMotivo,
   type Denuncia,
-  type PainelModeracao,
+  type UsuarioBanido,
 } from '../lib/moderacao';
 import { useProtegido } from '../lib/useProtegido';
 
 type Acao =
   | { tipo: 'banir'; denuncia: Denuncia }
-  | { tipo: 'desbanir'; usuario: PainelModeracao['banidos'][number] }
+  | { tipo: 'desbanir'; usuario: UsuarioBanido }
   | null;
 
-/** Painel da equipe (RF12): denúncias abertas, arquivar, banir (RN07) e, para admin, remover banimento. */
+type Aba = 'denuncias' | 'banidos';
+
+/** Painel da equipe (RF12): denúncias abertas (arquivar, banir) e usuários banidos com motivo e evidências. */
 export function Moderacao() {
   const { dados, erro, recarregar } = useProtegido(buscarPainel);
   const { dados: eu } = useProtegido(buscarMe);
   const [acao, setAcao] = useState<Acao>(null);
   const [arquivando, setArquivando] = useState<string | null>(null);
   const [falha, setFalha] = useState(false);
+  // Muda a cada desbanimento para a aba de banidos recarregar
+  const [versaoBanidos, setVersaoBanidos] = useState(0);
+  const [params, setParams] = useSearchParams();
+  const aba: Aba = params.get('aba') === 'banidos' ? 'banidos' : 'denuncias';
   const admin = eu?.papel === 'admin';
 
   async function arquivar(d: Denuncia) {
@@ -80,65 +88,49 @@ export function Moderacao() {
             <Numero valor={dados.resumo.contasSuspensas} rotulo={dados.resumo.contasSuspensas === 1 ? 'Conta suspensa' : 'Contas suspensas'} />
           </ul>
 
-          <section className="flex w-full flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-nome font-bold">Denúncias abertas</h2>
-              <p className="text-xs font-bold text-roxo">● {dados.denuncias.length} pendentes</p>
-            </div>
-            {falha && <Aviso titulo="Essa denúncia já foi resolvida por outra pessoa da equipe." />}
-            {dados.denuncias.length === 0 ? (
-              <Cartao className="text-center text-texto-suave">Nenhuma denúncia aberta. Comunidade tranquila por aqui.</Cartao>
-            ) : (
-              <ListaDenuncias
-                denuncias={dados.denuncias}
-                eu={eu}
-                arquivando={arquivando}
-                onArquivar={arquivar}
-                onBanir={(d) => setAcao({ tipo: 'banir', denuncia: d })}
-              />
-            )}
-          </section>
+          <div role="tablist" aria-label="Moderação" className="flex w-full gap-4 text-sm font-bold">
+            {(['denuncias', 'banidos'] as const).map((a) => (
+              <button
+                key={a}
+                type="button"
+                role="tab"
+                aria-selected={aba === a}
+                onClick={() => setParams(a === 'banidos' ? { aba: a } : {}, { replace: true })}
+                className={`rounded-caixa focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque ${aba === a ? 'text-destaque' : 'text-texto-suave hover:text-texto'}`}
+              >
+                ● {a === 'denuncias' ? `Denúncias (${dados.resumo.abertas})` : `Usuários banidos (${dados.resumo.contasSuspensas})`}
+              </button>
+            ))}
+          </div>
 
-          <section className="flex w-full flex-col gap-4">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-nome font-bold">Contas suspensas</h2>
-              <p className="text-xs text-texto-suave">
-                {admin ? 'Revise o pedido antes de remover um banimento.' : 'Só admins podem remover banimentos.'}
-              </p>
-            </div>
-            {dados.banidos.length === 0 ? (
-              <Cartao className="text-center text-texto-suave">Nenhuma conta suspensa.</Cartao>
-            ) : (
-              <Cartao className="flex flex-col gap-3">
-                {dados.banidos.map((b) => (
-                  <div
-                    key={b.id}
-                    className="flex flex-wrap items-center gap-3 border-b border-borda pb-3 last:border-0 last:pb-0"
-                  >
-                    <Avatar nome={b.nome} semente={b.id} foto={b.avatarUrl} tamanho="comentario" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-bold">{b.nome}</p>
-                      <p className="truncate text-xs text-texto-suave">
-                        @{b.discordUsername}
-                        {b.motivo && ` · ${b.motivo}`}
-                      </p>
-                    </div>
-                    {admin && (
-                      <Botao
-                        variante="secundario"
-                        cheio={false}
-                        compacto
-                        className="max-sm:w-full"
-                        onClick={() => setAcao({ tipo: 'desbanir', usuario: b })}
-                      >
-                        Remover banimento<span className="sr-only"> de {b.nome}</span>
-                      </Botao>
-                    )}
-                  </div>
-                ))}
-              </Cartao>
-            )}
-          </section>
+          {aba === 'denuncias' ? (
+            <section role="tabpanel" className="flex w-full flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-nome font-bold">Denúncias abertas</h2>
+                <p className="text-xs font-bold text-roxo">● {dados.denuncias.length} pendentes</p>
+              </div>
+              {falha && <Aviso titulo="Essa denúncia já foi resolvida por outra pessoa da equipe." />}
+              {dados.denuncias.length === 0 ? (
+                <Cartao className="text-center text-texto-suave">
+                  Nenhuma denúncia aberta. Comunidade tranquila por aqui.
+                </Cartao>
+              ) : (
+                <ListaDenuncias
+                  denuncias={dados.denuncias}
+                  eu={eu}
+                  arquivando={arquivando}
+                  onArquivar={arquivar}
+                  onBanir={(d) => setAcao({ tipo: 'banir', denuncia: d })}
+                />
+              )}
+            </section>
+          ) : (
+            <AbaBanidos
+              key={versaoBanidos}
+              admin={admin}
+              onDesbanir={(usuario) => setAcao({ tipo: 'desbanir', usuario })}
+            />
+          )}
 
           <Aviso tom="info" titulo="Proteja a identidade de quem denuncia">
             As denúncias são anônimas para o denunciado. Estes dados são visíveis apenas à equipe de moderação.
@@ -152,6 +144,7 @@ export function Moderacao() {
         onFeito={() => {
           setAcao(null);
           recarregar();
+          setVersaoBanidos((v) => v + 1);
         }}
       />
     </Layout>
@@ -241,6 +234,9 @@ function ListaDenuncias({
                 <td className="py-5 pr-3">
                   {rotuloMotivo(d.motivo)}
                   {d.descricao && <p className="mt-1 max-w-56 text-xs text-texto-suave">{d.descricao}</p>}
+                  <div className="mt-2">
+                    <Evidencias lista={d.evidencias} />
+                  </div>
                 </td>
                 <td className="py-5 pr-3">
                   {formatarData(d.data)}
@@ -266,12 +262,96 @@ function ListaDenuncias({
                 {rotuloMotivo(d.motivo)} · <span className="text-texto-suave">{formatarDataHora(d.data)}</span>
               </p>
               {d.descricao && <p className="text-xs text-texto-suave">{d.descricao}</p>}
+              <Evidencias lista={d.evidencias} />
               {acoes(d)}
             </Cartao>
           </li>
         ))}
       </ul>
     </>
+  );
+}
+
+/** Usuários banidos: motivo, quem baniu e quando, e as denúncias com as evidências que levaram ao banimento. */
+function AbaBanidos({ admin, onDesbanir }: { admin: boolean; onDesbanir: (u: UsuarioBanido) => void }) {
+  const { dados, erro } = useProtegido(buscarBanidos);
+
+  if (erro) return <Aviso titulo="Não foi possível carregar os usuários banidos." />;
+  if (!dados) {
+    return (
+      <p role="status" className="w-full text-texto-suave">
+        Carregando...
+      </p>
+    );
+  }
+  return (
+    <section role="tabpanel" className="flex w-full flex-col gap-4">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-nome font-bold">Usuários banidos</h2>
+        <p className="text-xs text-texto-suave">
+          {admin ? 'Revise o pedido antes de remover um banimento.' : 'Só admins podem remover banimentos.'}
+        </p>
+      </div>
+      {dados.banidos.length === 0 ? (
+        <Cartao className="text-center text-texto-suave">Nenhuma conta suspensa.</Cartao>
+      ) : (
+        <ul className="flex flex-col gap-4">
+          {dados.banidos.map((b) => (
+            <li key={b.id}>
+              <Cartao className="flex flex-col gap-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Avatar nome={b.nome} semente={b.id} foto={b.avatarUrl} tamanho="comentario" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-bold">{b.nome}</p>
+                    <p className="truncate text-xs text-texto-suave">
+                      @{b.discordUsername}
+                      {b.banidoEm && ` · banido em ${formatarDataHora(b.banidoEm)}`}
+                      {b.banidoPor && ` por ${b.banidoPor}`}
+                    </p>
+                  </div>
+                  {admin && (
+                    <Botao
+                      variante="secundario"
+                      cheio={false}
+                      compacto
+                      className="max-sm:w-full"
+                      onClick={() => onDesbanir(b)}
+                    >
+                      Remover banimento<span className="sr-only"> de {b.nome}</span>
+                    </Botao>
+                  )}
+                </div>
+                <div className="rounded-lg bg-perigo-fundo p-3 text-sm">
+                  <p className="font-bold text-perigo">Motivo do banimento</p>
+                  <p>{b.motivo ?? 'Não registrado (banimento anterior ao histórico).'}</p>
+                </div>
+                {b.denuncias.length > 0 ? (
+                  <div className="flex flex-col gap-3">
+                    <p className="text-sm font-bold">Denúncias e evidências</p>
+                    <ul className="flex flex-col gap-3">
+                      {b.denuncias.map((r) => (
+                        <li key={r.id} className="flex flex-col gap-2 border-l-2 border-borda pl-3 text-sm">
+                          <p>
+                            {rotuloMotivo(r.motivo)}{' '}
+                            <span className="text-texto-suave">
+                              · por {r.denunciante.nome} em {formatarData(r.data)}
+                            </span>
+                          </p>
+                          {r.descricao && <p className="text-xs text-texto-suave">{r.descricao}</p>}
+                          <Evidencias lista={r.evidencias} />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className="text-xs text-texto-suave">Nenhuma denúncia registrada contra esta conta.</p>
+                )}
+              </Cartao>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

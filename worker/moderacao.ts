@@ -13,6 +13,8 @@ import {
   podeDenunciar,
   podeDesbanir,
   podeModerar,
+  tipoImagem,
+  validarEvidencias,
 } from './rules';
 import { avatarUrl, entradaInvalida, naoEncontrado } from './util';
 
@@ -20,50 +22,82 @@ const idParam = z.object({ id: z.string().uuid() });
 
 export const denuncias = new Hono<AppEnv>();
 
-denuncias.post(
-  '/',
-  zValidator(
-    'json',
-    z.object({
-      denunciadoId: z.string().uuid(),
-      motivo: z.enum(MOTIVOS_DENUNCIA),
-      descricao: z.string().trim().max(500).optional(),
+const camposDenuncia = z.object({
+  denunciadoId: z.string().uuid(),
+  motivo: z.enum(MOTIVOS_DENUNCIA),
+  descricao: z.string().trim().max(500).optional(),
+});
+
+/**
+ * RF11: denúncia com até 3 imagens de evidência (multipart/form-data, campo "evidencias").
+ * O tipo é conferido pelos bytes do arquivo; tamanho e quantidade em validarEvidencias.
+ */
+denuncias.post('/', async (c) => {
+  const eu = c.var.usuario.id;
+  let corpo: Record<string, string | File | (string | File)[]>;
+  try {
+    corpo = await c.req.parseBody({ all: true });
+  } catch {
+    return c.json({ error: 'entrada_invalida' }, 400);
+  }
+  const campos = camposDenuncia.safeParse({
+    denunciadoId: corpo.denunciadoId,
+    motivo: corpo.motivo,
+    descricao: typeof corpo.descricao === 'string' && corpo.descricao.trim() ? corpo.descricao : undefined,
+  });
+  if (!campos.success) return c.json({ error: 'entrada_invalida' }, 400);
+  const { denunciadoId, motivo, descricao } = campos.data;
+
+  const enviados = ([] as (string | File)[]).concat(corpo.evidencias ?? []);
+  if (enviados.some((v) => typeof v === 'string')) return c.json({ error: 'entrada_invalida' }, 400);
+  const arquivos = enviados as File[];
+  // Confere quantidade e tamanho antes de ler o conteúdo
+  const previa = validarEvidencias(arquivos.map((a) => ({ tamanho: a.size, tipo: 'image/png' })));
+  if (previa) return c.json({ error: previa }, 400);
+  const evidencias = await Promise.all(
+    arquivos.map(async (a) => {
+      const bytes = new Uint8Array(await a.arrayBuffer());
+      return { bytes, tamanho: bytes.byteLength, tipo: tipoImagem(bytes) };
     }),
-    entradaInvalida,
-  ),
-  async (c) => {
-    const eu = c.var.usuario.id;
-    const { denunciadoId, motivo, descricao } = c.req.valid('json');
-    const db = c.env.DB;
+  );
+  const erroArquivo = validarEvidencias(evidencias);
+  if (erroArquivo) return c.json({ error: erroArquivo }, 400);
 
-    const [alvo, aberta, hoje] = await Promise.all([
-      db.prepare('SELECT id FROM users WHERE id = ? AND banido = 0').bind(denunciadoId).first<{ id: string }>(),
-      db
-        .prepare("SELECT 1 AS sim FROM reports WHERE autor_id = ? AND denunciado_id = ? AND status = 'aberta'")
-        .bind(eu, denunciadoId)
-        .first<{ sim: number }>(),
-      db
-        .prepare("SELECT COUNT(*) AS n FROM reports WHERE autor_id = ? AND criado_em > datetime('now', '-1 day')")
-        .bind(eu)
-        .first<{ n: number }>(),
-    ]);
-    if (!alvo) return c.json({ error: 'not_found' }, 404);
+  const db = c.env.DB;
+  const [alvo, aberta, hoje] = await Promise.all([
+    db.prepare('SELECT id FROM users WHERE id = ? AND banido = 0').bind(denunciadoId).first<{ id: string }>(),
+    db
+      .prepare("SELECT 1 AS sim FROM reports WHERE autor_id = ? AND denunciado_id = ? AND status = 'aberta'")
+      .bind(eu, denunciadoId)
+      .first<{ sim: number }>(),
+    db
+      .prepare("SELECT COUNT(*) AS n FROM reports WHERE autor_id = ? AND criado_em > datetime('now', '-1 day')")
+      .bind(eu)
+      .first<{ n: number }>(),
+  ]);
+  if (!alvo) return c.json({ error: 'not_found' }, 404);
 
-    const erro = podeDenunciar({
-      euId: eu,
-      alvoId: denunciadoId,
-      jaTemAbertaContraAlvo: aberta !== null,
-      denunciasHoje: hoje?.n ?? 0,
-    });
-    if (erro) return c.json({ error: erro }, erro === 'proprio_usuario' ? 400 : 409);
+  const erro = podeDenunciar({
+    euId: eu,
+    alvoId: denunciadoId,
+    jaTemAbertaContraAlvo: aberta !== null,
+    denunciasHoje: hoje?.n ?? 0,
+  });
+  if (erro) return c.json({ error: erro }, erro === 'proprio_usuario' ? 400 : 409);
 
-    await db
+  const id = crypto.randomUUID();
+  await db.batch([
+    db
       .prepare('INSERT INTO reports (id, autor_id, denunciado_id, motivo, descricao) VALUES (?, ?, ?, ?, ?)')
-      .bind(crypto.randomUUID(), eu, denunciadoId, motivo, descricao || null)
-      .run();
-    return c.body(null, 201);
-  },
-);
+      .bind(id, eu, denunciadoId, motivo, descricao || null),
+    ...evidencias.map((e) =>
+      db
+        .prepare('INSERT INTO evidencias (id, denuncia_id, tipo, tamanho, dados) VALUES (?, ?, ?, ?, ?)')
+        .bind(crypto.randomUUID(), id, e.tipo, e.tamanho, e.bytes),
+    ),
+  ]);
+  return c.body(null, 201);
+});
 
 const somenteEquipe = createMiddleware<AppEnv>(async (c, next) => {
   if (!podeModerar(c.var.usuario.papel)) return c.json({ error: 'sem_permissao' }, 403);
@@ -72,6 +106,18 @@ const somenteEquipe = createMiddleware<AppEnv>(async (c, next) => {
 
 export const moderacao = new Hono<AppEnv>();
 moderacao.use('*', somenteEquipe);
+
+interface LinhaEvidencia {
+  id: string;
+  denuncia_id: string;
+  tipo: string;
+  tamanho: number;
+}
+
+/** Metadados das evidências de uma denúncia (a imagem em si sai por /evidencias/:id). */
+function porDenuncia(lista: LinhaEvidencia[], denunciaId: string) {
+  return lista.filter((e) => e.denuncia_id === denunciaId).map((e) => ({ id: e.id, tipo: e.tipo, tamanho: e.tamanho }));
+}
 
 interface LinhaDenuncia {
   id: string;
@@ -90,7 +136,7 @@ interface LinhaDenuncia {
 moderacao.get('/', async (c) => {
   const db = c.env.DB;
   const admins = listaAdmins(c.env.ADMIN_DISCORD_IDS);
-  const [resumo, abertas, banidos] = await Promise.all([
+  const [resumo, abertas, evidencias] = await Promise.all([
     db
       .prepare(
         `SELECT
@@ -116,19 +162,10 @@ moderacao.get('/', async (c) => {
       .all<LinhaDenuncia>(),
     db
       .prepare(
-        `SELECT u.id, u.nome, u.discord_username, u.discord_id, u.avatar,
-                (SELECT l.motivo FROM moderacao_log l
-                  WHERE l.alvo_id = u.id AND l.acao = 'banir' ORDER BY l.criado_em DESC LIMIT 1) AS motivo
-           FROM users u WHERE u.banido = 1 ORDER BY u.nome LIMIT 100`,
+        `SELECT e.id, e.denuncia_id, e.tipo, e.tamanho FROM evidencias e
+           JOIN reports r ON r.id = e.denuncia_id WHERE r.status = 'aberta' ORDER BY e.criado_em`,
       )
-      .all<{
-        id: string;
-        nome: string;
-        discord_username: string;
-        discord_id: string;
-        avatar: string | null;
-        motivo: string | null;
-      }>(),
+      .all<LinhaEvidencia>(),
   ]);
 
   return c.json({
@@ -149,14 +186,99 @@ moderacao.get('/', async (c) => {
         avatarUrl: avatarUrl(d.alvo_discord_id, d.alvo_avatar),
         papel: papelEfetivo(d.alvo_discord_id, d.alvo_papel, admins),
       },
+      evidencias: porDenuncia(evidencias.results, d.id),
     })),
+  });
+});
+
+/** Aba "Usuários banidos": motivo, quem baniu, quando, e as denúncias com evidências contra a pessoa. */
+moderacao.get('/banidos', async (c) => {
+  const db = c.env.DB;
+  const [banidos, denunciasContra, evidencias] = await Promise.all([
+    db
+      .prepare(
+        `SELECT u.id, u.nome, u.discord_username, u.discord_id, u.avatar,
+                l.motivo, l.criado_em AS banido_em, a.nome AS banido_por
+           FROM users u
+           LEFT JOIN moderacao_log l ON l.id = (
+             SELECT id FROM moderacao_log WHERE alvo_id = u.id AND acao = 'banir' ORDER BY criado_em DESC LIMIT 1)
+           LEFT JOIN users a ON a.id = l.autor_id
+          WHERE u.banido = 1
+          ORDER BY l.criado_em DESC
+          LIMIT 100`,
+      )
+      .all<{
+        id: string;
+        nome: string;
+        discord_username: string;
+        discord_id: string;
+        avatar: string | null;
+        motivo: string | null;
+        banido_em: string | null;
+        banido_por: string | null;
+      }>(),
+    db
+      .prepare(
+        `SELECT r.id, r.denunciado_id, r.motivo, r.descricao, r.criado_em, a.id AS autor_id, a.nome AS autor_nome
+           FROM reports r JOIN users a ON a.id = r.autor_id
+           JOIN users d ON d.id = r.denunciado_id
+          WHERE d.banido = 1
+          ORDER BY r.criado_em DESC`,
+      )
+      .all<{
+        id: string;
+        denunciado_id: string;
+        motivo: string;
+        descricao: string | null;
+        criado_em: string;
+        autor_id: string;
+        autor_nome: string;
+      }>(),
+    db
+      .prepare(
+        `SELECT e.id, e.denuncia_id, e.tipo, e.tamanho FROM evidencias e
+           JOIN reports r ON r.id = e.denuncia_id JOIN users d ON d.id = r.denunciado_id
+          WHERE d.banido = 1 ORDER BY e.criado_em`,
+      )
+      .all<LinhaEvidencia>(),
+  ]);
+
+  return c.json({
     banidos: banidos.results.map((b) => ({
       id: b.id,
       nome: b.nome,
       discordUsername: b.discord_username,
       avatarUrl: avatarUrl(b.discord_id, b.avatar),
       motivo: b.motivo,
+      banidoEm: b.banido_em,
+      banidoPor: b.banido_por,
+      denuncias: denunciasContra.results
+        .filter((r) => r.denunciado_id === b.id)
+        .map((r) => ({
+          id: r.id,
+          motivo: r.motivo,
+          descricao: r.descricao,
+          data: r.criado_em,
+          denunciante: { id: r.autor_id, nome: r.autor_nome },
+          evidencias: porDenuncia(evidencias.results, r.id),
+        })),
     })),
+  });
+});
+
+/** Imagem de uma evidência, só para a equipe. Tipo conferido no upload; nunca é executada pelo navegador. */
+moderacao.get('/evidencias/:id', zValidator('param', idParam, naoEncontrado), async (c) => {
+  const { id } = c.req.valid('param');
+  const e = await c.env.DB.prepare('SELECT tipo, dados FROM evidencias WHERE id = ?')
+    .bind(id)
+    .first<{ tipo: string; dados: ArrayBuffer | number[] }>();
+  if (!e) return c.json({ error: 'not_found' }, 404);
+  const bytes = e.dados instanceof ArrayBuffer ? new Uint8Array(e.dados) : Uint8Array.from(e.dados);
+  return c.body(bytes, 200, {
+    'Content-Type': e.tipo,
+    'Content-Disposition': 'inline',
+    'Cache-Control': 'private, no-store',
+    'Content-Security-Policy': "default-src 'none'; img-src 'self'; sandbox",
   });
 });
 
