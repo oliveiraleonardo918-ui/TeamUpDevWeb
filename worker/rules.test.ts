@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   compatibilidade,
+  dadosAnonimizados,
   MAX_DENUNCIAS_POR_DIA,
   podeBanir,
   podeDenunciar,
@@ -247,4 +248,16 @@ describe('RF12 / RN07 - banir', () => {
     expect(podeDesbanir({ papel: 'moderador' }, { banido: true })).toBe('sem_permissao');
     expect(podeDesbanir({ papel: 'admin' }, { banido: false })).toBe('nao_banido');
   });
+});
+
+describe('RNF09 - excluir conta', () => {
+  const id = '00000000-0000-4000-8000-000000000001';
+  it('não guarda nada que identifique a pessoa', () => {
+    const d = dadosAnonimizados(id);
+    expect(d.nome).toBe('Conta excluída');
+    expect(d.discordUsername).toBe('');
+    expect(d.discordId).not.toMatch(/^d+$/);
+  });
+  it('mantém o discord_id único (derivado do id interno)', () =>
+    expect(dadosAnonimizados(id).discordId).not.toBe(dadosAnonimizados('outro').discordId));
 });

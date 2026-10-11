@@ -243,3 +243,18 @@ export function podeDesbanir(ator: { papel: Papel }, alvo: { banido: boolean }):
   if (!alvo.banido) return 'nao_banido';
   return null;
 }
+
+export const NOME_CONTA_EXCLUIDA = 'Conta excluída';
+export const CONFIRMACAO_EXCLUSAO = 'EXCLUIR';
+
+/**
+ * RNF09: o que sobra de uma conta excluída. Nada identifica a pessoa: o discord_id vira um valor
+ * derivado do id interno (precisa continuar único), nome e usuário somem.
+ */
+export function dadosAnonimizados(userId: string) {
+  return {
+    discordId: `excluido-${userId}`,
+    discordUsername: '',
+    nome: NOME_CONTA_EXCLUIDA,
+  };
+}

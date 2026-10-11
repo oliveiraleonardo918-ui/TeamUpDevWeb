@@ -8,6 +8,7 @@ import { Cartao } from '../components/Cartao';
 import { Estrelas } from '../components/Estrelas';
 import { Icone } from '../components/Icone';
 import { Indicador } from '../components/Indicador';
+import { ErroConexao } from '../components/ErroConexao';
 import { Layout } from '../components/Layout';
 import { buscarMatches } from '../lib/convites';
 import { formatarData, formatarDataHora } from '../lib/datas';
@@ -35,10 +36,7 @@ export function Matches() {
         <section className="flex min-w-0 flex-1 flex-col gap-4">
           {erro ? (
             <>
-              <Aviso titulo="Não foi possível carregar seus matches.">Verifique sua conexão e tente de novo.</Aviso>
-              <Botao variante="secundario" onClick={recarregar}>
-                Tentar de novo
-              </Botao>
+              <ErroConexao oQue="seus matches" onTentar={recarregar} />
             </>
           ) : !dados ? (
             <p role="status" className="text-texto-suave">

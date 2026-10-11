@@ -5,6 +5,7 @@ import { Aviso } from '../components/Aviso';
 import { Botao } from '../components/Botao';
 import { Cartao } from '../components/Cartao';
 import { formatarNota } from '../components/Estrelas';
+import { ErroConexao } from '../components/ErroConexao';
 import { Layout } from '../components/Layout';
 import { aceitarConvite, buscarConvites, recusarConvite, type Convite } from '../lib/convites';
 import { formatarDataHora } from '../lib/datas';
@@ -52,10 +53,7 @@ export function Convites() {
 
       {erro ? (
         <div className="flex w-full flex-col gap-4">
-          <Aviso titulo="Não foi possível carregar seus convites.">Verifique sua conexão e tente de novo.</Aviso>
-          <Botao variante="secundario" onClick={recarregar}>
-            Tentar de novo
-          </Botao>
+          <ErroConexao oQue="seus convites" onTentar={recarregar} />
         </div>
       ) : !dados ? (
         <p role="status" className="w-full text-texto-suave">

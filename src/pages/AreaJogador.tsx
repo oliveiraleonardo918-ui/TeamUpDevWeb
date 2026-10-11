@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import iconeSeta from '../assets/icons/arrow-right.svg';
 import iconeCadeado from '../assets/icons/lock-keyhole-suave.svg';
@@ -8,7 +9,9 @@ import { BarraProgresso } from '../components/BarraProgresso';
 import { Botao } from '../components/Botao';
 import { Cartao } from '../components/Cartao';
 import { Icone } from '../components/Icone';
+import { ErroConexao } from '../components/ErroConexao';
 import { Layout } from '../components/Layout';
+import { ModalExcluirConta } from '../components/ModalExcluirConta';
 import { sair } from '../lib/api';
 import { buscarPerfil, ETAPAS, NOMES_ETAPAS, type Etapa, type RespostaPerfil } from '../lib/perfil';
 import { useProtegido } from '../lib/useProtegido';
@@ -62,6 +65,7 @@ function textos(d: RespostaPerfil) {
 export function AreaJogador() {
   const { dados, erro, recarregar } = useProtegido(buscarPerfil);
   const navigate = useNavigate();
+  const [excluindo, setExcluindo] = useState(false);
 
   async function sairDaConta() {
     await sair().catch(() => undefined);
@@ -72,10 +76,7 @@ export function AreaJogador() {
     return (
       <Layout navegacao>
         <div className="flex w-full max-w-160 flex-col gap-4 pt-8">
-          <Aviso titulo="Não foi possível carregar seu perfil.">Verifique sua conexão e tente de novo.</Aviso>
-          <Botao variante="secundario" onClick={recarregar}>
-            Tentar de novo
-          </Botao>
+          <ErroConexao oQue="seu perfil" onTentar={recarregar} />
         </div>
       </Layout>
     );
@@ -132,6 +133,13 @@ export function AreaJogador() {
             className="self-center rounded-caixa text-sm text-texto-suave hover:text-texto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque"
           >
             Sair da conta
+          </button>
+          <button
+            type="button"
+            onClick={() => setExcluindo(true)}
+            className="-mt-3 self-center rounded-caixa text-xs text-perigo hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-perigo"
+          >
+            Excluir minha conta
           </button>
         </Cartao>
 
@@ -195,6 +203,7 @@ export function AreaJogador() {
           )}
         </div>
       </div>
+      <ModalExcluirConta aberto={excluindo} onFechar={() => setExcluindo(false)} />
     </Layout>
   );
 }

@@ -9,6 +9,7 @@ import { Cartao } from '../components/Cartao';
 import { EscolhaEstrelas } from '../components/EscolhaEstrelas';
 import { Estrelas, formatarNota } from '../components/Estrelas';
 import { Icone } from '../components/Icone';
+import { ErroConexao } from '../components/ErroConexao';
 import { Layout } from '../components/Layout';
 import { ApiError } from '../lib/api';
 import { avaliarMatch, buscarMatch, COMENTARIO_MAX, ROTULOS_NOTA, type DetalheMatch } from '../lib/convites';
@@ -46,10 +47,7 @@ export function Avaliar() {
         <Aviso titulo="Match não encontrado.">Só é possível avaliar quem formou um duo com você.</Aviso>
       ) : erro ? (
         <div className="flex w-full flex-col gap-4">
-          <Aviso titulo="Não foi possível carregar o match.">Verifique sua conexão e tente de novo.</Aviso>
-          <Botao variante="secundario" onClick={recarregar}>
-            Tentar de novo
-          </Botao>
+          <ErroConexao oQue="o match" onTentar={recarregar} />
         </div>
       ) : !dados ? (
         <p role="status" className="w-full text-texto-suave">

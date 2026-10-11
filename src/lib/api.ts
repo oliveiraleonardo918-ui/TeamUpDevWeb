@@ -53,3 +53,5 @@ export interface Me {
 
 export const buscarMe = () => api.get<Me>('/me');
 export const sair = () => api.post<null>('/auth/logout');
+/** RNF09: exclui (anonimiza) a própria conta; `confirmacao` precisa ser "EXCLUIR". */
+export const excluirConta = (confirmacao: string) => api.post<null>('/me/excluir', { confirmacao });

@@ -11,6 +11,7 @@ import { Cartao } from '../components/Cartao';
 import { Folha } from '../components/Folha';
 import { Icone } from '../components/Icone';
 import { Indicador } from '../components/Indicador';
+import { ErroConexao } from '../components/ErroConexao';
 import { Layout } from '../components/Layout';
 import { PainelFiltros } from '../components/PainelFiltros';
 import { ApiError } from '../lib/api';
@@ -224,10 +225,7 @@ function SemResultados({ onLimpar }: { onLimpar: () => void }) {
 function ErroCarregar({ onTentar }: { onTentar: () => void }) {
   return (
     <div className="flex w-full flex-col gap-4">
-      <Aviso titulo="Não foi possível carregar a busca.">Verifique sua conexão e tente de novo.</Aviso>
-      <Botao variante="secundario" onClick={onTentar}>
-        Tentar de novo
-      </Botao>
+      <ErroConexao oQue="os jogadores" onTentar={onTentar} />
     </div>
   );
 }
