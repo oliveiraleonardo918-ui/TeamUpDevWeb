@@ -11,6 +11,7 @@ import { Estrelas, formatarNota } from '../components/Estrelas';
 import { Icone } from '../components/Icone';
 import { ErroConexao } from '../components/ErroConexao';
 import { Layout } from '../components/Layout';
+import { ModalDenuncia } from '../components/ModalDenuncia';
 import { ApiError } from '../lib/api';
 import { avaliarMatch, buscarMatch, COMENTARIO_MAX, ROTULOS_NOTA, type DetalheMatch } from '../lib/convites';
 import { formatarData } from '../lib/datas';
@@ -22,6 +23,7 @@ export function Avaliar() {
   const buscar = useCallback(() => buscarMatch(id), [id]);
   const { dados, erro, recarregar } = useProtegido(buscar);
   const enviada = Boolean(dados?.minhaAvaliacao);
+  const [denunciando, setDenunciando] = useState(false);
 
   return (
     <Layout navegacao>
@@ -65,6 +67,18 @@ export function Avaliar() {
               {enviada && <Icone src={iconeCheck} tamanho={24} rotulo="Avaliado" />}
             </div>
             {dados.minhaAvaliacao ? <Enviada m={dados} /> : <Formulario m={dados} onEnviada={recarregar} />}
+            {/* RF11 também aqui: um problema na partida aparece justamente na hora de avaliar */}
+            <p className="border-t border-borda pt-4 text-center text-xs text-texto-suave">
+              Teve algum problema com {dados.parceiro.nome}?{' '}
+              <button
+                type="button"
+                onClick={() => setDenunciando(true)}
+                className="rounded-caixa font-bold text-perigo hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-perigo"
+              >
+                Denunciar
+              </button>
+            </p>
+            <ModalDenuncia aberto={denunciando} jogador={dados.parceiro} onFechar={() => setDenunciando(false)} />
           </Cartao>
 
           <div className="flex flex-col gap-4 lg:w-66 lg:shrink-0">
