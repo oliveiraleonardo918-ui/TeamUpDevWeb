@@ -8,7 +8,7 @@ import { Cartao } from '../components/Cartao';
 import { Evidencias } from '../components/Evidencias';
 import { Layout } from '../components/Layout';
 import { Modal } from '../components/Modal';
-import { buscarMe, type Me } from '../lib/api';
+import { buscarMe } from '../lib/api';
 import { formatarData, formatarDataHora } from '../lib/datas';
 import {
   arquivarDenuncia,
@@ -16,6 +16,7 @@ import {
   buscarBanidos,
   buscarPainel,
   desbanir,
+  MOTIVOS_SEM_ACAO,
   rotuloMotivo,
   type Denuncia,
   type UsuarioBanido,
@@ -117,7 +118,6 @@ export function Moderacao() {
               ) : (
                 <ListaDenuncias
                   denuncias={dados.denuncias}
-                  eu={eu}
                   arquivando={arquivando}
                   onArquivar={arquivar}
                   onBanir={(d) => setAcao({ tipo: 'banir', denuncia: d })}
@@ -160,28 +160,22 @@ function Numero({ valor, rotulo }: { valor: number; rotulo: string }) {
   );
 }
 
-/** O moderador não bane outro moderador nem admin; o botão some nesses casos (o servidor também barra). */
-function podeBanirNaTela(eu: Me | null, d: Denuncia): boolean {
-  if (!eu || d.denunciado.id === eu.id || d.denunciado.papel === 'admin') return false;
-  return d.denunciado.papel === 'jogador' || eu.papel === 'admin';
-}
-
 function ListaDenuncias({
   denuncias,
-  eu,
   arquivando,
   onArquivar,
   onBanir,
 }: {
   denuncias: Denuncia[];
-  eu: Me | null;
   arquivando: string | null;
   onArquivar: (d: Denuncia) => void;
   onBanir: (d: Denuncia) => void;
 }) {
   const navigate = useNavigate();
   // Desktop: três botões na linha. Celular: "Ver perfil" em cima, Banir e Arquivar embaixo.
+  // O servidor informa o que quem está vendo pode fazer; o motivo aparece embaixo quando algo está bloqueado
   const acoes = (d: Denuncia) => (
+    <div className="flex flex-col gap-2">
     <div className="grid grid-cols-2 gap-2 lg:flex">
       <Botao
         variante="secundario"
@@ -195,7 +189,8 @@ function ListaDenuncias({
         variante="perigo"
         compacto
         className="lg:flex-1"
-        disabled={!podeBanirNaTela(eu, d)}
+        disabled={d.bloqueio.banir !== null}
+        title={d.bloqueio.banir ? MOTIVOS_SEM_ACAO[d.bloqueio.banir] : undefined}
         onClick={() => onBanir(d)}
       >
         Banir
@@ -204,11 +199,16 @@ function ListaDenuncias({
         variante="secundario"
         compacto
         className="lg:flex-1"
-        disabled={arquivando !== null}
+        disabled={arquivando !== null || d.bloqueio.arquivar !== null}
+        title={d.bloqueio.arquivar ? MOTIVOS_SEM_ACAO[d.bloqueio.arquivar] : undefined}
         onClick={() => onArquivar(d)}
       >
         {arquivando === d.id ? '...' : 'Arquivar'}
       </Botao>
+    </div>
+    {(d.bloqueio.banir || d.bloqueio.arquivar) && (
+      <p className="text-xs text-texto-suave">{MOTIVOS_SEM_ACAO[d.bloqueio.arquivar ?? d.bloqueio.banir ?? '']}</p>
+    )}
     </div>
   );
 

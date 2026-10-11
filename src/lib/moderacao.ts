@@ -34,7 +34,16 @@ export interface Denuncia {
   denunciante: { id: string; nome: string };
   denunciado: { id: string; nome: string; avatarUrl: string | null; papel: 'jogador' | 'moderador' | 'admin' };
   evidencias: Evidencia[];
+  /** null = quem está vendo pode; senão, o motivo (ver MOTIVOS_SEM_ACAO) */
+  bloqueio: { arquivar: string | null; banir: string | null };
 }
+
+/** Por que a ação não está disponível (regra podeTratarDenuncia, no servidor). */
+export const MOTIVOS_SEM_ACAO: Record<string, string> = {
+  conflito_interesse: 'Esta denúncia é contra você. Outra pessoa da equipe precisa analisar.',
+  alvo_moderador: 'Denúncia contra um moderador: só admins podem tratar.',
+  alvo_admin: 'Admins não podem ser banidos pela interface. Outro admin pode arquivar a denúncia.',
+};
 
 export interface PainelModeracao {
   resumo: { abertas: number; arquivadasHoje: number; contasSuspensas: number };
@@ -49,7 +58,7 @@ export interface UsuarioBanido {
   motivo: string | null;
   banidoEm: string | null;
   banidoPor: string | null;
-  denuncias: (Omit<Denuncia, 'denunciado'>)[];
+  denuncias: Omit<Denuncia, 'denunciado' | 'bloqueio'>[];
 }
 
 export const MENSAGENS_DENUNCIA: Record<string, string> = {

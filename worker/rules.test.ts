@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   compatibilidade,
+  podeTratarDenuncia,
   EVIDENCIA_MAX_BYTES,
   tipoImagem,
   validarEvidencias,
@@ -296,4 +297,27 @@ describe('RF11 - evidências da denúncia', () => {
     expect(validarEvidencias([{ ...ok, tamanho: 0 }])).toBe('evidencia_grande');
   });
   it('recusa tipo desconhecido', () => expect(validarEvidencias([{ tamanho: 10, tipo: null }])).toBe('evidencia_tipo'));
+});
+
+describe('RF12 - quem trata a denúncia', () => {
+  const mod = { id: 'm', papel: 'moderador' as const };
+  const admin = { id: 'a', papel: 'admin' as const };
+  const jogador = { id: 'j', papel: 'jogador' as const };
+  it('moderador trata denúncia contra jogador', () => {
+    expect(podeTratarDenuncia(mod, jogador, 'arquivar')).toBeNull();
+    expect(podeTratarDenuncia(mod, jogador, 'banir')).toBeNull();
+  });
+  it('ninguém trata denúncia contra si mesmo', () => {
+    expect(podeTratarDenuncia(mod, { id: 'm', papel: 'moderador' }, 'arquivar')).toBe('conflito_interesse');
+    expect(podeTratarDenuncia(admin, { id: 'a', papel: 'admin' }, 'arquivar')).toBe('conflito_interesse');
+  });
+  it('denúncia contra moderador é com admin', () => {
+    expect(podeTratarDenuncia(mod, { id: 'm2', papel: 'moderador' }, 'arquivar')).toBe('alvo_moderador');
+    expect(podeTratarDenuncia(admin, { id: 'm2', papel: 'moderador' }, 'banir')).toBeNull();
+  });
+  it('admin não é banido; outro admin pode arquivar', () => {
+    expect(podeTratarDenuncia(admin, { id: 'a2', papel: 'admin' }, 'banir')).toBe('alvo_admin');
+    expect(podeTratarDenuncia(admin, { id: 'a2', papel: 'admin' }, 'arquivar')).toBeNull();
+    expect(podeTratarDenuncia(mod, { id: 'a2', papel: 'admin' }, 'arquivar')).toBe('alvo_admin');
+  });
 });
