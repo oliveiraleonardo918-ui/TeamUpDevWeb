@@ -1,4 +1,4 @@
-# Copie para .dev.vars (não versionado). Em staging/produção use:
+# Copie para .dev.vars (não versionado). O DISCORD_CLIENT_ID é público e fica no wrangler.jsonc.
+# Em staging/produção o secret vai por:
 #   npx wrangler secret put DISCORD_CLIENT_SECRET --env staging
-DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=

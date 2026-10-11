@@ -21,3 +21,19 @@ export function funcaoComplementar(minha: Role, candidato: Role): boolean {
 export function notaValida(nota: number): boolean {
   return Number.isInteger(nota) && nota >= 0 && nota <= 5;
 }
+
+/** RNF04: rotas da API que não exigem sessão. */
+export function rotaPublica(caminho: string): boolean {
+  return caminho === '/api/health' || caminho.startsWith('/api/auth/');
+}
+
+export type DecisaoLogin = 'criar' | 'entrar' | 'suspenso' | 'maioridade_pendente';
+
+/**
+ * Resultado do callback do Discord.
+ * RN07: banido não loga. RN06: conta nova só com a declaração de 18+ feita na tela de entrada.
+ */
+export function decidirLogin(p: { existe: boolean; banido: boolean; declarouMaioridade: boolean }): DecisaoLogin {
+  if (p.existe) return p.banido ? 'suspenso' : 'entrar';
+  return p.declarouMaioridade ? 'criar' : 'maioridade_pendente';
+}

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
 import iconeCadeado from '../assets/icons/lock-keyhole.svg';
 import iconeEstrela from '../assets/icons/star.svg';
 import iconeFiltros from '../assets/icons/sliders-horizontal.svg';
@@ -6,13 +7,14 @@ import iconeLink from '../assets/icons/link.svg';
 import iconeMensagem from '../assets/icons/message-circle.svg';
 import iconeUsuarios from '../assets/icons/users.svg';
 import { Avatar } from '../components/Avatar';
+import { Aviso } from '../components/Aviso';
 import { Botao } from '../components/Botao';
 import { Cartao } from '../components/Cartao';
 import { Icone } from '../components/Icone';
 import { Indicador } from '../components/Indicador';
 import { Layout } from '../components/Layout';
 import { Selecao } from '../components/Selecao';
-import { urlLoginDiscord } from '../lib/api';
+import { buscarMe, urlLoginDiscord } from '../lib/api';
 
 const vantagens = [
   { icone: iconeFiltros, texto: 'Filtros por função e elo' },
@@ -20,9 +22,26 @@ const vantagens = [
   { icone: iconeCadeado, texto: 'Contato só após match mútuo' },
 ];
 
+// Códigos que o callback do OAuth devolve em ?erro=
+const mensagensErro: Record<string, string> = {
+  idade: 'Para criar sua conta, confirme que você tem 18 anos ou mais.',
+  cancelado: 'O login foi cancelado no Discord. Tente de novo quando quiser.',
+  falha: 'Não foi possível entrar com o Discord. Tente de novo.',
+};
+
 /** Tela "Entrar" (RF01, RN06: confirmação de 18+ obrigatória antes do login). */
 export function Entrar() {
   const [maiorDeIdade, setMaiorDeIdade] = useState(false);
+  const [params] = useSearchParams();
+  const erro = mensagensErro[params.get('erro') ?? ''];
+  const navigate = useNavigate();
+
+  // Quem já tem sessão vai direto para a Área do Jogador
+  useEffect(() => {
+    buscarMe()
+      .then(() => navigate('/jogador', { replace: true }))
+      .catch(() => undefined);
+  }, [navigate]);
 
   return (
     <Layout acoes={<p className="text-xs text-destaque">Respeito primeiro</p>}>
@@ -60,6 +79,7 @@ export function Entrar() {
             ))}
           </ul>
           <hr className="border-borda" />
+          {erro && <Aviso titulo={erro} />}
           <Selecao
             checked={maiorDeIdade}
             onChange={(e) => setMaiorDeIdade(e.target.checked)}

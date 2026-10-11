@@ -13,7 +13,7 @@
   "observability": { "enabled": true },
 
   // Top-level = desenvolvimento local e o container de testes (DAST)
-  "vars": { "APP_ENV": "local" },
+  "vars": { "APP_ENV": "local", "DISCORD_CLIENT_ID": "1558670127350685728" },
   "d1_databases": [
     {
       "binding": "DB",
@@ -26,7 +26,7 @@
   "env": {
     "staging": {
       "name": "teamup-staging",
-      "vars": { "APP_ENV": "staging" },
+      "vars": { "APP_ENV": "staging", "DISCORD_CLIENT_ID": "1558670127350685728" },
       "d1_databases": [
         {
           "binding": "DB",
@@ -44,7 +44,7 @@
       // Assim o tráfego só entra pelo domínio, onde o WAF fica na frente do Worker.
       "workers_dev": true,
       "preview_urls": false,
-      "vars": { "APP_ENV": "production" },
+      "vars": { "APP_ENV": "production", "DISCORD_CLIENT_ID": "1558670127350685728" },
       "d1_databases": [
         {
           "binding": "DB",
