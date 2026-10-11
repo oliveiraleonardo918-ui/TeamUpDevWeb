@@ -268,3 +268,26 @@ export function podeEnviarSuporte(p: { doIpNaUltimaHora: number; totalHoje: numb
   if (p.totalHoje >= MAX_SUPORTE_POR_DIA) return 'limite_diario';
   return null;
 }
+
+export const EVIDENCIAS_MAX = 3;
+export const EVIDENCIA_MAX_BYTES = 1024 * 1024; // 1 MB
+export type TipoImagem = 'image/png' | 'image/jpeg' | 'image/webp';
+
+/** Tipo real da imagem pelos primeiros bytes (a extensão e o Content-Type do upload não são confiáveis). */
+export function tipoImagem(b: Uint8Array): TipoImagem | null {
+  if (b.length >= 8 && [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every((v, i) => b[i] === v)) return 'image/png';
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
+  const ascii = (ini: number, fim: number) => String.fromCharCode(...b.slice(ini, fim));
+  if (b.length >= 12 && ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') return 'image/webp';
+  return null;
+}
+
+/** RF11: evidências da denúncia (até 3 imagens de até 1 MB). */
+export function validarEvidencias(
+  arquivos: { tamanho: number; tipo: TipoImagem | null }[],
+): 'muitas_evidencias' | 'evidencia_grande' | 'evidencia_tipo' | null {
+  if (arquivos.length > EVIDENCIAS_MAX) return 'muitas_evidencias';
+  if (arquivos.some((a) => a.tamanho === 0 || a.tamanho > EVIDENCIA_MAX_BYTES)) return 'evidencia_grande';
+  if (arquivos.some((a) => a.tipo === null)) return 'evidencia_tipo';
+  return null;
+}

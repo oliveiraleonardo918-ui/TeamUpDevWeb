@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   compatibilidade,
+  EVIDENCIA_MAX_BYTES,
+  tipoImagem,
+  validarEvidencias,
   MAX_SUPORTE_POR_HORA_IP,
   podeEnviarSuporte,
   dadosAnonimizados,
@@ -269,4 +272,28 @@ describe('Formulário de suporte', () => {
   it('limita por IP', () =>
     expect(podeEnviarSuporte({ doIpNaUltimaHora: MAX_SUPORTE_POR_HORA_IP, totalHoje: 5 })).toBe('limite_ip'));
   it('tem teto diário', () => expect(podeEnviarSuporte({ doIpNaUltimaHora: 0, totalHoje: 100 })).toBe('limite_diario'));
+});
+
+describe('RF11 - evidências da denúncia', () => {
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0]);
+  const jpg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0]);
+  const webp = new TextEncoder().encode('RIFF    WEBPVP8 ');
+  it('reconhece PNG, JPEG e WebP pelo conteúdo', () => {
+    expect(tipoImagem(png)).toBe('image/png');
+    expect(tipoImagem(jpg)).toBe('image/jpeg');
+    expect(tipoImagem(webp)).toBe('image/webp');
+  });
+  it('recusa outros formatos, mesmo com extensão de imagem', () => {
+    expect(tipoImagem(new TextEncoder().encode('<svg onload=alert(1)>'))).toBeNull();
+    expect(tipoImagem(new TextEncoder().encode('%PDF-1.7'))).toBeNull();
+    expect(tipoImagem(new Uint8Array([]))).toBeNull();
+  });
+  const ok = { tamanho: 1000, tipo: 'image/png' as const };
+  it('aceita até 3 imagens de até 1 MB', () => expect(validarEvidencias([ok, ok, ok])).toBeNull());
+  it('recusa mais de 3', () => expect(validarEvidencias([ok, ok, ok, ok])).toBe('muitas_evidencias'));
+  it('recusa arquivo grande ou vazio', () => {
+    expect(validarEvidencias([{ ...ok, tamanho: EVIDENCIA_MAX_BYTES + 1 }])).toBe('evidencia_grande');
+    expect(validarEvidencias([{ ...ok, tamanho: 0 }])).toBe('evidencia_grande');
+  });
+  it('recusa tipo desconhecido', () => expect(validarEvidencias([{ tamanho: 10, tipo: null }])).toBe('evidencia_tipo'));
 });

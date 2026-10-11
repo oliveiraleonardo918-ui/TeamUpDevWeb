@@ -31,6 +31,8 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: data === undefined ? undefined : JSON.stringify(data),
     }),
+  /** Formulário com arquivos: o navegador define o Content-Type (multipart) com o boundary. */
+  postForm: <T>(path: string, form: FormData) => request<T>(path, { method: 'POST', body: form }),
   put: <T>(path: string, data: unknown) =>
     request<T>(path, {
       method: 'PUT',
