@@ -33,5 +33,16 @@ export const api = {
     }),
 };
 
-/** Inicia o OAuth do Discord (navegação de página inteira, não fetch). */
-export const urlLoginDiscord = '/api/auth/discord';
+/** Inicia o OAuth do Discord (navegação de página inteira, não fetch). `maior18`: declaração do RN06. */
+export const urlLoginDiscord = '/api/auth/discord?maior18=1';
+
+export interface Me {
+  id: string;
+  nome: string;
+  discordUsername: string;
+  avatarUrl: string | null;
+  isAdmin: boolean;
+}
+
+export const buscarMe = () => api.get<Me>('/me');
+export const sair = () => api.post<null>('/auth/logout');

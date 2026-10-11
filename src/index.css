@@ -6,6 +6,7 @@
 
   --color-fundo: #0f1115;
   --color-superficie: #171a21;
+  --color-superficie-elevada: #1d222c;
   --color-borda: #262b36;
   --color-texto: #e8eaf0;
   --color-texto-suave: #9aa3b2;
@@ -13,6 +14,8 @@
   --color-destaque-contraste: #0f1115;
   --color-roxo: #bca2ff;
   --color-roxo-fundo: #29203f;
+  --color-perigo: #ff869a;
+  --color-perigo-fundo: #361d28;
   --color-avatar-verde: #2b514d;
   --color-avatar-roxo: #544166;
 
