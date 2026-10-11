@@ -10,12 +10,12 @@ const estilos = {
   // "Opção" do protótipo (elo, turnos, estilo, gênero)
   caixa: {
     lista: 'gap-2',
-    item: 'rounded-lg border border-borda bg-fundo px-3.5 py-2.75 text-base text-texto-suave peer-checked:border-destaque peer-checked:bg-destaque-fundo peer-checked:font-bold peer-checked:text-destaque',
+    item: 'rounded-lg border border-borda bg-fundo px-3.5 py-2.75 text-base text-texto-suave transition-colors peer-not-checked:group-hover:border-texto-suave peer-not-checked:group-hover:text-texto peer-checked:border-destaque peer-checked:bg-destaque-fundo peer-checked:font-bold peer-checked:text-destaque',
   },
   // "Indicador" do protótipo (funções)
   pilula: {
     lista: 'gap-2.5',
-    item: 'flex items-center gap-1.25 rounded-full bg-superficie-elevada px-2.5 py-1.25 text-xs font-bold text-texto-suave peer-checked:bg-destaque-fundo peer-checked:text-destaque',
+    item: 'flex items-center gap-1.25 rounded-full bg-superficie-elevada px-2.5 py-1.25 text-xs font-bold text-texto-suave transition-colors peer-not-checked:group-hover:bg-borda peer-not-checked:group-hover:text-texto peer-checked:bg-destaque-fundo peer-checked:text-destaque',
   },
 } as const;
 
@@ -53,7 +53,7 @@ export function Opcoes<T extends string>(props: Props<T>) {
       <legend className="mb-3 text-sm font-bold">{legenda}</legend>
       <div className={`flex flex-wrap ${e.lista}`}>
         {opcoes.map((o) => (
-          <label key={o.valor} className="cursor-pointer">
+          <label key={o.valor} className="group cursor-pointer">
             <input
               type={props.multipla ? 'checkbox' : 'radio'}
               name={nome}

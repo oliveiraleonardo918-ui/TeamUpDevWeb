@@ -11,6 +11,7 @@
   --color-texto: #e8eaf0;
   --color-texto-suave: #9aa3b2;
   --color-destaque: #2dd4bf;
+  --color-destaque-hover: #5eead4;
   --color-destaque-contraste: #0f1115;
   --color-destaque-fundo: #14332f;
   --color-roxo: #bca2ff;
@@ -67,5 +68,11 @@
 
   body {
     @apply bg-fundo font-sans text-base text-texto antialiased;
+  }
+
+  /* O Tailwind v4 deixa botões com o cursor padrão; aqui volta a mãozinha em tudo que é clicável */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
   }
 }
