@@ -130,7 +130,7 @@ export function Buscar() {
                 </div>
               </div>
 
-              <FiltrosAtivos filtros={filtros} />
+              <FiltrosAtivos filtros={filtros} onMudar={aplicar} />
 
               {carregando ? (
                 <div className="grid gap-4 lg:grid-cols-2">
@@ -177,32 +177,54 @@ function resumoProprio(eu: RespostaPerfil): string {
   return texto ? `${texto}. ` : '';
 }
 
-function FiltrosAtivos({ filtros: f }: { filtros: Filtros }) {
+/** RF18: cada filtro ativo vira um chip removível; "Limpar tudo" quando há 2 ou mais. */
+function FiltrosAtivos({ filtros: f, onMudar }: { filtros: Filtros; onMudar: (f: Filtros) => void }) {
   const elo =
     f.eloMin || f.eloMax
       ? f.eloMin === f.eloMax
         ? rotulo(ELOS, f.eloMin)
         : `${f.eloMin ? rotulo(ELOS, f.eloMin) : 'Ferro'} – ${f.eloMax ? rotulo(ELOS, f.eloMax) : 'Radiante'}`
       : null;
-  const outros = [
-    f.complementar && 'Funções complementares',
-    f.turno && rotulo(TURNOS, f.turno),
-    f.estilo && rotulo(ESTILOS, f.estilo),
-    f.genero && rotulo(GENEROS_FILTRO, f.genero),
-  ].filter(Boolean);
-  if (!elo && outros.length === 0) return null;
+
+  // Cada chip sabe como ficam os filtros sem ele (o elo mínimo e o máximo saem juntos)
+  const chips: { chave: string; texto: string; semEle: Filtros }[] = [];
+  if (elo) chips.push({ chave: 'elo', texto: elo, semEle: { ...f, eloMin: undefined, eloMax: undefined } });
+  if (f.complementar)
+    chips.push({ chave: 'complementar', texto: 'Funções complementares', semEle: { ...f, complementar: undefined } });
+  if (f.turno) chips.push({ chave: 'turno', texto: rotulo(TURNOS, f.turno), semEle: { ...f, turno: undefined } });
+  if (f.estilo) chips.push({ chave: 'estilo', texto: rotulo(ESTILOS, f.estilo), semEle: { ...f, estilo: undefined } });
+  if (f.genero)
+    chips.push({ chave: 'genero', texto: rotulo(GENEROS_FILTRO, f.genero), semEle: { ...f, genero: undefined } });
+
+  if (chips.length === 0) return null;
+
+  const foco = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque';
   return (
     <ul className="flex flex-wrap items-center gap-2" aria-label="Filtros ativos">
-      {elo && (
-        <li>
-          <Indicador tom="destaque">{elo}</Indicador>
-        </li>
-      )}
-      {outros.map((o) => (
-        <li key={String(o)} className="text-xs font-bold text-destaque">
-          ● {o}
+      {chips.map((c) => (
+        <li key={c.chave}>
+          <button
+            type="button"
+            onClick={() => onMudar(c.semEle)}
+            aria-label={`Remover filtro ${c.texto}`}
+            className={`inline-flex items-center gap-1.5 rounded-full border border-transparent bg-destaque-fundo px-2.5 py-1.25 text-xs font-bold text-destaque transition-colors hover:border-destaque ${foco}`}
+          >
+            {c.texto}
+            <span aria-hidden="true">✕</span>
+          </button>
         </li>
       ))}
+      {chips.length >= 2 && (
+        <li>
+          <button
+            type="button"
+            onClick={() => onMudar({})}
+            className={`rounded-caixa px-1 text-xs font-bold text-texto-suave underline underline-offset-2 hover:text-texto ${foco}`}
+          >
+            Limpar tudo
+          </button>
+        </li>
+      )}
     </ul>
   );
 }
