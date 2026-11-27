@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import iconeConvidar from '../assets/icons/user-plus-escuro.svg';
 import { Avatar } from '../components/Avatar';
+import { BotaoSalvar } from '../components/BotaoSalvar';
 import { Aviso } from '../components/Aviso';
 import { Botao } from '../components/Botao';
 import { Cartao } from '../components/Cartao';
@@ -159,6 +160,7 @@ function Conteudo({ p }: { p: PerfilPublico }) {
             </>
           )}
           <AcaoConvite p={p} />
+                    {p.relacao !== 'proprio' && <BotaoSalvar jogadorId={p.id} />}
           {p.relacao !== 'proprio' && (
             <button
               type="button"

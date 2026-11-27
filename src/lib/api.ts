@@ -39,6 +39,8 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }),
+      /** Remover um recurso (ex.: tirar um jogador dos salvos). */
+  del: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
 };
 
 /** Inicia o OAuth do Discord (navegação de página inteira, não fetch). `maior18`: declaração do RN06. */
