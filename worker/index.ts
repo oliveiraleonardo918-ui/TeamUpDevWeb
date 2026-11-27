@@ -11,6 +11,7 @@ import { equipe } from './equipe';
 import { jogadores } from './jogadores';
 import { denuncias, moderacao } from './moderacao';
 import { perfil } from './perfil';
+import { salvos } from './salvos';
 import { CONFIRMACAO_EXCLUSAO, dadosAnonimizados, rotaPublica } from './rules';
 import { encerrarSessao, exigirSessao } from './sessao';
 import { suporte } from './suporte';
@@ -85,6 +86,7 @@ app.route('/matches', matches);
 app.route('/equipe', equipe);
 app.route('/denuncias', denuncias);
 app.route('/moderacao', moderacao);
+app.route('/salvos', salvos);
 
 app.notFound((c) => c.json({ error: 'not_found' }, 404));
 
