@@ -28,6 +28,7 @@ Jornada: login → perfil gamer → busca com filtros → convite mútuo → tro
 | RF10 | Avaliar o parceiro de 1 a 5 estrelas, com comentário opcional | Ciclo de feedback |
 | RF11 | Denunciar um jogador informando o motivo | Moderação |
 | RF12 | Admin lista denúncias e bane jogadores | Moderação |
+| RF18 | Remover filtros ativos da busca individualmente (chip com ✕) ou todos de uma vez | Usabilidade |
 
 Se sobrar tempo: chat simples, bloquear usuário, ordenar por compatibilidade, mais jogos.
 

@@ -55,6 +55,7 @@ O projeto aplica na prática:
 - **Player Cards** ordenados pelos mais compatíveis (turnos em comum, função complementar, elo próximo, mesmo estilo)
 - Filtros de **faixa de elo**, **só funções complementares** (RN03), **turno**, **estilo** e **gênero** (só quem consentiu, RN05)
 - Filtros guardados na URL; no celular, os filtros abrem num painel que sobe de baixo
+- Filtros ativos viram **chips removíveis** (✕), com "Limpar tudo" a partir de 2 filtros (RF18)
 - **Perfil público** com reputação, distribuição das notas e todas as avaliações recebidas
 - **Clicar na foto** de qualquer pessoa abre o perfil dela
 
