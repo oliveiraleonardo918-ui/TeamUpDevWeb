@@ -28,6 +28,7 @@ Jornada: login → perfil gamer → busca com filtros → convite mútuo → tro
 | RF10 | Avaliar o parceiro de 1 a 5 estrelas, com comentário opcional | Ciclo de feedback |
 | RF11 | Denunciar um jogador informando o motivo | Moderação |
 | RF12 | Admin lista denúncias e bane jogadores | Moderação |
+| RF15 | Salvar jogadores para ver depois, numa lista privada ("Salvos") | Jornada, passo 3 |
 
 Se sobrar tempo: chat simples, bloquear usuário, ordenar por compatibilidade, mais jogos.
 
@@ -42,6 +43,7 @@ Se sobrar tempo: chat simples, bloquear usuário, ordenar por compatibilidade, m
 | RN05 | Gênero é opcional; o filtro por gênero só mostra quem declarou e consentiu. |
 | RN06 | Uso restrito a maiores de 18 anos, declarado no primeiro acesso. |
 | RN07 | Jogador banido não aparece na busca e não consegue logar. |
+| RN10 | Lista de salvos é privada; máximo de 50; não salva a si mesmo nem duas vezes; banido ou conta excluída somem da lista; só dados públicos (sem Riot ID ou Discord). |
 
 Exibição: a nota pública aparece a partir de 3 avaliações; antes disso o card mostra "Novo jogador".
 

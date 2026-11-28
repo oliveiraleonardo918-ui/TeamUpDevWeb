@@ -58,6 +58,11 @@ O projeto aplica na prática:
 - **Perfil público** com reputação, distribuição das notas e todas as avaliações recebidas
 - **Clicar na foto** de qualquer pessoa abre o perfil dela
 
+### 📌 Jogadores salvos (RF15)
+- No perfil de alguém, **"Salvar para depois"**; a lista fica em **Área do Jogador → Jogadores salvos**
+- Lista **privada** (ninguém é avisado), até **50** jogadores, sem Riot ID ou Discord (RN10)
+- Banidos e contas excluídas **somem da lista** sem apagar o registro
+
 ### 🤝 Convites e match (RF07–RF09)
 - Convite pelo perfil; o outro jogador **aceita ou recusa** na caixa de convites
 - **Match só com aceite mútuo**; Riot ID e Discord aparecem **apenas para os dois** (RN02)
@@ -99,6 +104,7 @@ O projeto aplica na prática:
 | RN05 | Gênero opcional; filtro só mostra quem declarou e consentiu | `generoParaSalvar` + SQL da busca |
 | RN06 | Uso restrito a maiores de 18 anos | `decidirLogin` |
 | RN07 | Banido não loga e não aparece na busca | middleware de sessão + `podeBanir` |
+| RN10 | Salvos: lista privada, até 50, sem si mesmo nem repetido | `podeSalvar` + `worker/salvos.ts` |
 
 Todas as regras são funções puras em [`worker/rules.ts`](worker/rules.ts), cobertas por testes em
 [`worker/rules.test.ts`](worker/rules.test.ts).

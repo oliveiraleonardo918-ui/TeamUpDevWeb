@@ -13,6 +13,7 @@ import { Moderacao } from './pages/Moderacao';
 import { NaoEncontrada } from './pages/NaoEncontrada';
 import { PerfilJogador } from './pages/PerfilJogador';
 import { Privacidade } from './pages/Privacidade';
+import { Salvos } from './pages/Salvos';
 import { Termos } from './pages/Termos';
 
 export function App() {
@@ -27,6 +28,7 @@ export function App() {
       <Route path="/matches" element={<Matches />} />
       <Route path="/matches/:id" element={<Match />} />
       <Route path="/matches/:id/avaliar" element={<Avaliar />} />
+      <Route path="/salvos" element={<Salvos />} />
       <Route path="/moderacao" element={<Moderacao />} />
       <Route path="/moderacao/equipe" element={<Equipe />} />
       <Route path="/termos" element={<Termos />} />

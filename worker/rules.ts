@@ -310,3 +310,19 @@ export function podeTratarDenuncia(
   if (denunciado.papel === 'moderador' && ator.papel !== 'admin') return 'alvo_moderador';
   return null;
 }
+
+// RF15/RN10: jogadores salvos
+export const MAX_SALVOS = 50;
+
+/** RN10: pode salvar este jogador? Não salva a si mesmo, nem duas vezes, nem passa do limite. */
+export function podeSalvar(p: {
+  euId: string;
+  alvoId: string;
+  jaSalvo: boolean;
+  totalSalvos: number;
+}): 'proprio_usuario' | 'ja_salvo' | 'limite_salvos' | null {
+  if (p.euId === p.alvoId) return 'proprio_usuario';
+  if (p.jaSalvo) return 'ja_salvo';
+  if (p.totalSalvos >= MAX_SALVOS) return 'limite_salvos';
+  return null;
+}

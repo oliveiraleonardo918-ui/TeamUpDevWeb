@@ -224,6 +224,10 @@ export function AreaJogador() {
             )}
           </Cartao>
 
+          <Botao variante="secundario" onClick={() => navigate('/salvos')}>
+            Jogadores salvos
+          </Botao>
+          
           {dados.buscaLiberada ? (
             <>
               <Aviso tom="info" titulo="Perfil mínimo completo">
