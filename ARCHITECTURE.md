@@ -161,6 +161,7 @@ erDiagram
     reports ||--o{ moderacao_log : "referencia"
     reports ||--o{ evidencias : "anexa (até 3)"
     users ||--o{ suporte_mensagens : "envia (opcional)"
+    users ||--o{ salvos : "salva / é salvo"
 
     users {
         TEXT id PK "UUID"
@@ -260,6 +261,7 @@ desbanida, as avaliações dela voltam a contar.
 | `0008_suporte` | Tabela `suporte_mensagens` (formulário de suporte e limite anti-spam) |
 | `0009_ratings_validas` | View `ratings_validas` (avaliações de banidos não contam) |
 | `0010_evidencias` | Tabela `evidencias` (imagens anexadas às denúncias) |
+| `0011_jogadores_salvos` | Tabela `salvos` (jogadores salvos, RF15) |
 
 Regra do time: **migration só adiciona** (colunas, tabelas, índices). Nada é renomeado ou apagado, para que a versão
 anterior do código continue funcionando enquanto o deploy acontece (as migrations rodam antes do deploy do Worker).
@@ -288,6 +290,7 @@ Toda resposta que traz pessoas inclui `avatarUrl` (foto do Discord, montada e va
 | `GET /matches`, `GET /matches/:id` | Participantes | Histórico e contatos do parceiro (RF09, RN02) |
 | `POST /matches/:id/avaliacao` | Participantes | Avaliação de 1 a 5 (RF10, RN04) |
 | `POST /denuncias` | Sessão | Denuncia um jogador, com até 3 imagens de evidência (multipart) (RF11) |
+| `GET /salvos`, `POST /salvos`, `DELETE /salvos/:id` | Sessão | Lista, salva e remove jogadores salvos; só os próprios (RF15, RN10) |
 | `GET /moderacao`, `POST /moderacao/...` | Moderador ou admin | Denúncias com evidências, arquivar, banir; desbanir só admin (RF12, RN07) |
 | `GET /moderacao/banidos` | Moderador ou admin | Usuários banidos com motivo, quem baniu, denúncias e evidências |
 | `GET /moderacao/evidencias/:id` | Moderador ou admin | A imagem de uma evidência (Content-Type validado, CSP sandbox) |
@@ -326,6 +329,7 @@ Toda resposta que traz pessoas inclui `avatarUrl` (foto do Discord, montada e va
 | RNF09 exclusão | `dadosAnonimizados` | `index.ts` |
 | RF11 evidências | `tipoImagem`, `validarEvidencias` | `moderacao.ts` |
 | Suporte anti-spam | `podeEnviarSuporte` | `suporte.ts` |
+| RF15 / RN10 salvos | `podeSalvar` | `salvos.ts` |
 | Foto de perfil | `avatarUrl` (`worker/util.ts`) | todas as rotas que trazem pessoas |
 
 ---
