@@ -160,7 +160,7 @@ function Conteudo({ p }: { p: PerfilPublico }) {
             </>
           )}
           <AcaoConvite p={p} />
-                    {p.relacao !== 'proprio' && <BotaoSalvar jogadorId={p.id} />}
+          {p.relacao !== 'proprio' && <BotaoSalvar jogadorId={p.id} />}
           {p.relacao !== 'proprio' && (
             <button
               type="button"
